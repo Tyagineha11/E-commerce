@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Products</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#f4f6f9;
+display:flex;
+}
+
+.main{
+margin-left:240px;
+width:100%;
+}
+
+.container{
+max-width:1000px;
+margin:40px auto;
+background:#fff;
+padding:25px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+.top-bar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+}
+
+.back-btn{
+text-decoration:none;
+color:#ff8800;
+font-weight:bold;
+}
+
+.filter-buttons{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin:10px 0 20px 0;
+}
+
+.filter-buttons button{
+background:#e5e7eb;
+color:#111;
+padding:6px 12px;
+border-radius:20px;
+font-size:13px;
+cursor:pointer;
+border:none;
+}
+
+.filter-buttons button.active{
+background:#ff8800;
+color:#fff;
+}
+
+.product{
+border:1px solid #eee;
+border-radius:10px;
+padding:15px;
+margin-bottom:15px;
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.product img{
+width:80px;
+height:80px;
+object-fit:cover;
+border-radius:8px;
+border:1px solid #ddd;
+}
+
+.product-info{ flex:1; }
+
+.badge{
+padding:4px 8px;
+border-radius:6px;
+font-size:12px;
+}
+
+.active{ background:#dbeafe; color:#1e40af; }
+.inactive{ background:#f3f4f6; color:#374151; }
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#10b981;
+color:#fff;
+}
+
+button:hover{ background:#059669; }
+
+.footer{
+text-align:center;
+padding:15px;
+background:#fff;
+margin-top:30px;
+box-shadow:0 -2px 10px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main">
+
+<div id="header"></div>
+
+<div class="container">
+
+<div class="top-bar">
+<a class="back-btn" href="seller-dashboard.html">
+<i class="fa fa-arrow-left"></i> Back
+</a>
+<h2>My Products</h2>
+</div>
+
+<div class="filter-buttons" id="categoryButtons"></div>
+<div id="productList"></div>
+
+</div>
+
+<div class="footer">
+© 2026 ShopNow Seller Panel
+</div>
+
+</div>
+
+<script src="security.js"></script>
+<script src="seller-common.js"></script>
+
+<script>
+
+	// ================= INIT =================
+
+	let seller = null;
+	let sellerId = null;
+
+	// ================= SAFE INIT =================
+	function initPage() {
+
+	    sellerAuthGuard();
+
+	    seller = getSeller();
+
+	    if (!seller || !seller.id) {
+	        console.log("Seller missing, redirecting...");
+	        localStorage.clear();
+	        window.location.href = "seller-login.html";
+	        return;
+	    }
+
+	    sellerId = seller.id;
+
+	    loadProducts();
+	    loadCategories();
+	}
+
+	// ================= COMPONENT LOADER =================
+
+	function loadComponent(id, file) {
+
+	    fetch(file)
+	        .then(res => res.text())
+	        .then(html => {
+
+	            document.getElementById(id).innerHTML = html;
+
+	            if (id === "header") {
+	                watchHeader();
+	            }
+	        });
+	}
+
+
+	// ================= AUTH HEADER HELPER =================
+
+	function authHeader() {
+
+	    const token = localStorage.getItem("accessToken");
+
+	    return {
+	        "Content-Type": "application/json",
+	        "Authorization": token ? "Bearer " + token : ""
+	    };
+	}
+
+
+	// ================= LOAD PRODUCTS =================
+
+	async function loadProducts() {
+
+	    try {
+
+	        const res = await fetchWithAuth(
+	            `http://localhost:8080/api/products/seller/${sellerId}`,
+	            { method: "GET" }
+	        );
+
+	        const result = await res.json();
+
+	        if (result.code === 401) {
+	            throw new Error("Unauthorized");
+	        }
+
+	        allProducts = Array.isArray(result.data) ? result.data : [];
+
+	        renderProducts(allProducts);
+
+	    } catch (err) {
+
+	        console.log("Load Products Error:", err);
+
+	        Swal.fire("Error", "Failed to load products", "error");
+	    }
+	}
+
+
+	// ================= RENDER PRODUCTS =================
+
+	function renderProducts(products) {
+
+	    const container = document.getElementById("productList");
+
+	    if (!products.length) {
+	        container.innerHTML = "<p>No products found</p>";
+	        return;
+	    }
+
+	    let html = "";
+
+	    products.forEach(p => {
+
+	        const image = p.imageBase64
+	            ? `data:image/png;base64,${p.imageBase64}`
+	            : "https://via.placeholder.com/80";
+
+	        html += `
+	        <div class="product">
+	            <img src="${image}">
+	            
+	            <div class="product-info">
+	                <h3>${p.name}</h3>
+	                <p>₹${p.price}</p>
+	                <span class="badge ${p.status === 'ACTIVE' ? 'active' : 'inactive'}">
+	                    ${p.status}
+	                </span>
+	            </div>
+
+	            <button onclick="viewProduct(${p.id})">View</button>
+	        </div>
+	        `;
+	    });
+
+	    container.innerHTML = html;
+	}
+
+
+	// ================= LOAD CATEGORIES =================
+
+	async function loadCategories() {
+
+	    try {
+
+	        const res = await fetchWithAuth(
+	            "http://localhost:8080/api/categories/getAll",
+	            { method: "GET" }
+	        );
+
+	        const data = await res.json();
+
+	        const categories = Array.isArray(data.data) ? data.data : [];
+
+	        let html = `<button class="active" onclick="filter('all',this)">All</button>`;
+
+	        categories.forEach(c => {
+	            html += `
+	            <button onclick="filter('${c.name.toLowerCase()}',this)">
+	                ${c.name}
+	            </button>`;
+	        });
+
+	        document.getElementById("categoryButtons").innerHTML = html;
+
+	    } catch (err) {
+	        console.log("Category Error:", err);
+	    }
+	}
+
+
+	// ================= FILTER =================
+
+	function filter(category, btn) {
+
+	    document.querySelectorAll("#categoryButtons button")
+	        .forEach(b => b.classList.remove("active"));
+
+	    btn.classList.add("active");
+
+	    let filtered = category === "all"
+	        ? allProducts
+	        : allProducts.filter(p =>
+	            (p.categoryName || "").toLowerCase() === category
+	        );
+
+	    renderProducts(filtered);
+	}
+
+
+	// ================= VIEW PRODUCT =================
+
+	async function viewProduct(id) {
+
+	    try {
+
+	        const res = await fetchWithAuth(
+	            `http://localhost:8080/api/products/getById/${id}`,
+	            { method: "GET" }
+	        );
+
+	        const data = await res.json();
+
+	        const p = data.data;
+
+	        Swal.fire({
+	            title: p.name,
+	            html: `
+	                <div style="text-align:left">
+	                    <p><b>Price:</b> ₹${p.price}</p>
+	                    <p><b>Stock:</b> ${p.stock}</p>
+	                    <p><b>Status:</b> ${p.status}</p>
+	                </div>
+	            `
+	        });
+
+	    } catch (err) {
+	        console.log(err);
+	        Swal.fire("Error", "Failed to load product", "error");
+	    }
+	}
+
+
+	// ================= INIT PAGE =================
+
+	window.addEventListener("DOMContentLoaded", () => {
+
+	    loadComponent("header", "seller-header.html");
+	    loadComponent("sidebar", "seller-sidebar.html");
+
+	    initPage();
+	});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Product View</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+.container{
+display:flex;
+min-height:100vh;
+}
+
+.main{
+flex:1;
+}
+
+.table-container{
+margin:20px;
+background:#fff;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.05);
+overflow-x:auto;
+}
+
+.table-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+}
+
+h2{
+font-weight:600;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:12px 15px;
+text-align:left;
+border-bottom:1px solid #e5e7eb;
+font-size:14px;
+}
+
+th{
+background:#f9fafb;
+}
+
+.badge{
+padding:4px 8px;
+border-radius:6px;
+font-size:12px;
+font-weight:500;
+}
+
+.instock{
+background:#dcfce7;
+color:#166534;
+}
+
+.outstock{
+background:#fee2e2;
+color:#991b1b;
+}
+
+.active{
+background:#dbeafe;
+color:#1e40af;
+}
+
+.inactive{
+background:#f3f4f6;
+color:#374151;
+}
+
+.view-btn{
+background:#10b981;
+color:#fff;
+padding:6px 10px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.view-btn:hover{
+background:#059669;
+}
+
+.product-images{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:20px;
+}
+
+.product-images img{
+width:120px;
+height:120px;
+object-fit:cover;
+border-radius:10px;
+border:1px solid #ddd;
+}
+
+.pagination{
+margin-top:20px;
+display:flex;
+justify-content:center;
+gap:8px;
+}
+
+.pagination button{
+padding:8px 14px;
+border:none;
+border-radius:6px;
+background:#e5e7eb;
+cursor:pointer;
+}
+
+.pagination .active{
+background:#111827;
+color:#fff;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="sidebar"></div>
+
+<div class="main">
+
+<div id="adminHeader"></div>
+
+<div class="table-container">
+
+<div class="table-top">
+<h2>All Products</h2>
+</div>
+
+<table>
+
+<thead>
+<tr>
+
+<th>S.No</th>
+<th>Name</th>
+<th>Price</th>
+<th>Discount</th>
+<th>Stock</th>
+<th>Status</th>
+<th>Category</th>
+<th>Seller</th>
+<th>Brand</th>
+<th>Action</th>
+
+</tr>
+</thead>
+
+<tbody id="productTable"></tbody>
+
+</table>
+
+<div class="pagination" id="pagination"></div>
+
+</div>
+
+</div>
+</div>
+
+
+<script src="admin-common.js"></script>
+<script src="security.js"></script>
+
+<script>
+	let currentPage = 1;
+	let rowsPerPage = 5;
+	let allProducts = [];
+
+	// ================= TOKEN FIX =================
+	const token = localStorage.getItem("accessToken");
+
+	if (!token || localStorage.getItem("role") !== "ADMIN") {
+	    window.location.href = "admin-login.html";
+	}
+
+	// ================= LOAD UI =================
+	fetch("admin-sidebar.html")
+	.then(r => r.text())
+	.then(d => document.getElementById("sidebar").innerHTML = d);
+
+	fetch("admin-header.html")
+	.then(r => r.text())
+	.then(d => document.getElementById("adminHeader").innerHTML = d);
+
+	// ================= LOAD PRODUCTS =================
+	async function loadProducts() {
+	    try {
+	        const res = await fetch("http://localhost:8080/api/admin/products", {
+	            headers: {
+	                Authorization: "Bearer " + token
+	            }
+	        });
+
+	        if (!res.ok) throw new Error("Failed to load products");
+
+	        const result = await res.json();
+	        allProducts = result?.data || [];
+
+	        currentPage = 1; // reset page
+	        renderTable();
+	        renderPagination();
+
+	    } catch (err) {
+	        console.log(err);
+	        Swal.fire("Error", "Products load failed", "error");
+	    }
+	}
+
+	// ================= TABLE =================
+	function renderTable() {
+
+	    const table = document.getElementById("productTable");
+	    table.innerHTML = "";
+
+	    if (!allProducts.length) {
+	        table.innerHTML = `<tr><td colspan="10" style="text-align:center;">No Products Found</td></tr>`;
+	        return;
+	    }
+
+	    const start = (currentPage - 1) * rowsPerPage;
+	    const end = start + rowsPerPage;
+
+	    const products = allProducts.slice(start, end);
+
+	    let rows = "";
+
+	    products.forEach((p, index) => {
+
+	        const statusText = p.status === "ACTIVE" ? "Active" : "Inactive";
+	        const statusClass = p.status === "ACTIVE" ? "active" : "inactive";
+
+	        const stockText = p.stock === "IN_STOCK" ? "In Stock" : "Out of Stock";
+	        const stockClass = p.stock === "IN_STOCK" ? "instock" : "outstock";
+
+	        rows += `
+	        <tr>
+	            <td>${start + index + 1}</td>
+	            <td>${p.name || '-'}</td>
+	            <td>₹${p.price || 0}</td>
+	            <td>₹${p.discountPrice || 0}</td>
+
+	            <td><span class="badge ${stockClass}">${stockText}</span></td>
+	            <td><span class="badge ${statusClass}">${statusText}</span></td>
+
+	            <td>${p.categoryName || '-'}</td>
+	            <td>${p.sellerName || '-'}</td>
+	            <td>${p.brand || '-'}</td>
+
+	            <td>
+	                <button class="view-btn" onclick="viewProduct(${p.id})">
+	                    View
+	                </button>
+	            </td>
+	        </tr>
+	        `;
+	    });
+
+	    table.innerHTML = rows;
+	}
+
+	// ================= PAGINATION =================
+	function renderPagination() {
+
+	    const pagination = document.getElementById("pagination");
+	    pagination.innerHTML = "";
+
+	    const totalPages = Math.ceil(allProducts.length / rowsPerPage);
+
+	    for (let i = 1; i <= totalPages; i++) {
+	        pagination.innerHTML += `
+	        <button class="${i === currentPage ? 'active' : ''}" 
+	                onclick="changePage(${i})">
+	            ${i}
+	        </button>`;
+	    }
+	}
+
+	function changePage(page) {
+	    currentPage = page;
+	    renderTable();
+	    renderPagination();
+	}
+
+	// ================= VIEW PRODUCT =================
+	async function viewProduct(id) {
+
+	    try {
+	        const res = await fetch(`http://localhost:8080/api/admin/products/${id}`, {
+	            headers: {
+	                Authorization: "Bearer " + token
+	            }
+	        });
+
+	        if (!res.ok) throw new Error("Product not found");
+
+	        const result = await res.json();
+	        const p = result.data;
+
+	        let imageHtml = "";
+
+	        if (p?.imageBase64) {
+	            imageHtml = `<img src="data:image/jpeg;base64,${p.imageBase64}">`;
+	        } else {
+
+	            try {
+	                const imgRes = await fetch(
+	                    `http://localhost:8080/api/product-images/product/${id}`
+	                );
+
+	                if (imgRes.ok) {
+	                    const imgData = await imgRes.json();
+	                    const images = imgData?.data || [];
+
+	                    imageHtml = images.length
+	                        ? images.map(img =>
+	                            `<img src="data:image/jpeg;base64,${img.imageBase64}">`
+	                          ).join("")
+	                        : `<img src="https://via.placeholder.com/120">`;
+	                } else {
+	                    imageHtml = `<img src="https://via.placeholder.com/120">`;
+	                }
+
+	            } catch {
+	                imageHtml = `<img src="https://via.placeholder.com/120">`;
+	            }
+	        }
+
+	        Swal.fire({
+	            width: 800,
+	            title: p.name,
+	            html: `
+	                <div style="text-align:left;">
+	                    <div class="product-images">${imageHtml}</div>
+
+	                    <p style="color:#666;">${p.shortDescription || ""}</p>
+
+	                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+	                        <div><b>Price:</b> ₹${p.price}</div>
+	                        <div><b>Discount:</b> ₹${p.discountPrice || 0}</div>
+	                        <div><b>Stock:</b> ${p.stock}</div>
+	                        <div><b>Status:</b> ${p.status}</div>
+	                        <div><b>Brand:</b> ${p.brand || '-'}</div>
+	                        <div><b>Category:</b> ${p.categoryName || '-'}</div>
+	                        <div><b>Seller:</b> ${p.sellerName || '-'}</div>
+	                    </div>
+
+	                    <hr>
+
+	                    <p>${p.description || '-'}</p>
+	                </div>
+	            `,
+	            confirmButtonText: "Close"
+	        });
+
+	    } catch (err) {
+	        console.log(err);
+	        Swal.fire("Error", "Product load failed", "error");
+	    }
+	}
+
+	// ================= INIT =================
+	document.addEventListener("DOMContentLoaded", loadProducts);
+</script>
+
+
+
+<script>
+initAdminApp();
+</script>
+
+</body>
+</html>

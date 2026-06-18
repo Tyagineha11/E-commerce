@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Product</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#f4f6f9;
+display:flex;
+}
+
+.main{ margin-left:240px; width:100%; }
+
+.container{
+max-width:800px;
+margin:40px auto;
+background:#fff;
+padding:25px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+.form-group{ margin-bottom:15px; }
+
+label{ display:block; margin-bottom:5px; font-weight:bold; }
+
+input, textarea, select{
+width:100%;
+padding:10px;
+border:1px solid #ccc;
+border-radius:6px;
+outline:none;
+}
+
+textarea{ height:80px; resize:none; }
+
+button{
+width:100%;
+padding:12px;
+background:#10b981;
+border:none;
+color:#fff;
+font-size:16px;
+border-radius:6px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{ background:#059669; }
+
+.image-box{
+display:flex;
+gap:10px;
+margin-top:10px;
+align-items:center;
+}
+
+.remove-btn{
+background:#ef4444;
+padding:6px 10px;
+border:none;
+border-radius:6px;
+color:#fff;
+cursor:pointer;
+width:auto;
+}
+</style>
+</head>
+
+<body>
+
+<div id="sidebar"></div>
+<div class="main">
+<div id="header"></div>
+
+<div class="container">
+
+<h2>Add Product</h2>
+
+<div class="form-group"><label>Name</label><input id="name"></div>
+<div class="form-group"><label>Short Description</label><input id="shortDescription"></div>
+<div class="form-group"><label>Description</label><textarea id="description"></textarea></div>
+
+<div class="form-group"><label>Price</label><input type="number" id="price"></div>
+<div class="form-group"><label>Discount Price</label><input type="number" id="discountPrice"></div>
+
+<div class="form-group">
+<label>Stock</label>
+<select id="stock">
+<option value="IN_STOCK">IN STOCK</option>
+<option value="OUT_OF_STOCK">OUT OF STOCK</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Status</label>
+<select id="status">
+<option value="ACTIVE">ACTIVE</option>
+<option value="INACTIVE">INACTIVE</option>
+</select>
+</div>
+
+<div class="form-group"><label>Brand</label><input id="brand"></div>
+<div class="form-group"><label>Weight</label><input type="number" id="weight"></div>
+<div class="form-group"><label>Color</label><input id="color"></div>
+<div class="form-group"><label>Size</label><input id="size"></div>
+
+<div class="form-group">
+<label>Category</label>
+<select id="categoryId"></select>
+</div>
+
+<div class="form-group">
+<label>Images</label>
+<div id="imageContainer">
+<div class="image-box">
+<input type="file" class="image-input">
+<button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+</div>
+</div>
+
+<button type="button" onclick="addImageField()">+ Add Image</button>
+</div>
+
+<button onclick="addProduct()">Add Product</button>
+
+</div>
+</div>
+
+<script src="seller-common.js"></script>
+<script src="security.js"></script>
+<script>
+
+	/* ================= INIT SAFE ================= */
+	sellerAuthGuard();
+
+	const seller = getSeller();
+
+	if (!seller) {
+	    window.location.href = "seller-login.html";
+	}
+
+	const sellerId = seller.id;
+
+
+	/* ================= COMPONENT LOADER ================= */
+	function loadComponent(id, file){
+	    fetch(file)
+	        .then(r => r.text())
+	        .then(html => {
+	            document.getElementById(id).innerHTML = html;
+
+	            if (id === "header") {
+	                watchHeader();
+	            }
+	        });
+	}
+
+
+	/* ================= LOAD CATEGORIES (FIXED) ================= */
+	async function loadCategories(){
+	    try{
+
+	        const res = await fetchWithAuth(
+	            "http://localhost:8080/api/categories/getAll",
+	            { method: "GET" }
+	        );
+
+	        const data = await res.json();
+
+	        const dropdown = document.getElementById("categoryId");
+
+	        dropdown.innerHTML = `<option value="">Select Category</option>`;
+
+	        (data.data || []).forEach(c=>{
+	            dropdown.innerHTML += `
+	                <option value="${c.id}">${c.name}</option>
+	            `;
+	        });
+
+	    }catch(err){
+	        console.log(err);
+	        Swal.fire("Error","Category load failed","error");
+	    }
+	}
+
+
+	/* ================= ADD IMAGE FIELD ================= */
+	function addImageField(){
+	    const div = document.createElement("div");
+	    div.className = "image-box";
+
+	    div.innerHTML = `
+	        <input type="file" class="image-input">
+	        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+	    `;
+
+	    document.getElementById("imageContainer").appendChild(div);
+	}
+
+
+	/* ================= ADD PRODUCT (FIXED) ================= */
+	async function addProduct(){
+
+	    const product = {
+	        name: document.getElementById("name").value.trim(),
+	        shortDescription: document.getElementById("shortDescription").value.trim(),
+	        description: document.getElementById("description").value.trim(),
+	        price: Number(document.getElementById("price").value),
+	        discountPrice: Number(document.getElementById("discountPrice").value) || 0,
+	        stock: document.getElementById("stock").value,
+	        status: document.getElementById("status").value,
+	        brand: document.getElementById("brand").value.trim(),
+	        weight: Number(document.getElementById("weight").value) || 0,
+	        color: document.getElementById("color").value.trim(),
+	        size: document.getElementById("size").value.trim(),
+	        sellerId: sellerId,
+	        categoryId: Number(document.getElementById("categoryId").value)
+	    };
+
+	    /* VALIDATION */
+	    if(!product.name || !product.price || !product.categoryId){
+	        Swal.fire("Warning","Fill required fields","warning");
+	        return;
+	    }
+
+	    try{
+
+	        /* CREATE PRODUCT (SAFE FETCH) */
+			const res = await fetchWithAuth(
+			    "http://localhost:8080/api/products/create",
+			    {
+			        method: "POST",
+					headers: {
+					    "Content-Type": "application/json"
+					},
+			        body: JSON.stringify(product)
+			    }
+			);
+
+	        const result = await res.json();
+
+	        if(result.code !== 200){
+	            Swal.fire("Error", result.message, "error");
+	            return;
+	        }
+
+	        const productId = result.data.id;
+
+	        /* UPLOAD IMAGES (SAFE) */
+	        const inputs = document.querySelectorAll(".image-input");
+
+	        for(let input of inputs){
+	            if(input.files.length > 0){
+
+	                const form = new FormData();
+	                form.append("files", input.files[0]);
+
+	                await fetchWithAuth(
+	                    `http://localhost:8080/api/product-images/upload/${productId}`,
+	                    {
+	                        method: "POST",
+	                        headers: {
+	                            // IMPORTANT: do NOT set Content-Type for FormData
+	                        },
+	                        body: form
+	                    }
+	                );
+	            }
+	        }
+
+	        Swal.fire("Success","Product added","success");
+
+	        /* RESET FORM */
+	        document.querySelectorAll("input,textarea").forEach(i=>i.value="");
+	        document.getElementById("categoryId").value="";
+
+	        document.getElementById("imageContainer").innerHTML=`
+	            <div class="image-box">
+	                <input type="file" class="image-input">
+	                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+	            </div>
+	        `;
+
+	    }catch(err){
+	        console.log(err);
+	        Swal.fire("Error","Server error","error");
+	    }
+	}
+
+
+	/* ================= INIT ================= */
+	window.addEventListener("DOMContentLoaded",()=>{
+
+	    loadComponent("header","seller-header.html");
+	    loadComponent("sidebar","seller-sidebar.html");
+
+	    loadCategories();
+	});
+</script>
+
+</body>
+</html>

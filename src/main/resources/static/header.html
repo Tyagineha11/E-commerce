@@ -1,0 +1,250 @@
+<style>
+	*{
+	    margin:0;
+	    padding:0;
+	    box-sizing:border-box;
+	    font-family:Arial, sans-serif;
+	}
+
+	body{
+	    background:#f4f4f4;
+	}
+	/* HEADER */
+	header{
+	    background:#000;
+	    color:white;
+	    padding:10px 32px;
+	    display:flex;
+	    justify-content:space-between;
+	    align-items:center;
+	    flex-wrap:wrap;
+	}
+
+	.logo{
+	    font-size:28px;
+	    font-weight:bold;
+	}
+
+	.logo span{
+	    color:#ff8800;
+	}
+
+	nav{
+	    display:flex;
+	    align-items:center;
+	    gap:30px;
+	}
+
+	nav a{
+	    color:white;
+	    text-decoration:none;
+	    font-size:18px;
+	    transition:0.3s;
+	}
+
+	nav a:hover,
+	nav a.active{
+	    color:#ff8800;
+	}
+
+	.right-icons{
+	    display:flex;
+	    gap:35px;
+	    align-items:center;
+	}
+
+	/* ICON BOX */
+	.icon-box{
+	    position:relative;
+	    text-align:center;
+	    cursor:pointer;
+	    color:white;
+	}
+
+	.icon-box i{
+	    font-size:17px;
+	    display:block;
+	    margin-bottom:5px;
+	}
+
+	.icon-box span{
+	    font-size:18px;
+	}
+
+	/* NORMAL HOVER */
+	.icon-box:hover{
+	    color:#ff8800;
+	}
+
+	/* PROFILE MENU */
+	.profile-menu{
+	    position:relative;
+	}
+
+	/* invisible bridge */
+	.profile-menu::after{
+	    content:'';
+	    position:absolute;
+	    top:100%;
+	    right:0;
+	    width:100%;
+	    height:15px;
+	}
+
+	/* PROFILE BUTTON */
+	.profile-btn{
+	    color:white;
+	}
+
+	.profile-btn:hover{
+	    color:#ff8800;
+	}
+
+	/* DROPDOWN */
+	.dropdown{
+	    position:absolute;
+	    top:100%;
+	    right:-86px;
+	    margin-top:8px;
+	    width:291px;
+	    background:white;
+	    border-radius:10px;
+	    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+	    padding:20px;
+	    text-align:left;
+	    display:none;
+	    z-index:999;
+	}
+
+	/* OPEN DROPDOWN */
+	.profile-menu:hover .dropdown{
+	    display:block;
+	}
+
+	/* TEXT */
+	.dropdown h3{
+	    font-size:22px;
+	    margin-bottom:0;
+	    color:#222;
+	}
+
+	.dropdown p{
+	    font-size:14px;
+	    color:#555;
+	    margin-bottom:14px;
+	}
+
+	/* BUTTON */
+	.dropdown button{
+	    width:100%;
+	    padding:7px;
+	    background:#ff8800;
+	    color:white;
+	    border:none;
+	    border-radius:6px;
+	    font-size:16px;
+	    cursor:pointer;
+	    margin-bottom:20px;
+	}
+
+	.dropdown button:hover{
+	    background:#e67600;
+	}
+
+	/* LINKS */
+	.dropdown a{
+	    display:block;
+	    text-decoration:none;
+	    color:#222;
+	    font-size:15px;
+	    padding:10px 0;
+	}
+
+	.dropdown a:hover{
+	    color:#ff8800;
+	}
+
+	.dropdown a i{
+	    display:inline-block;
+	    font-size:18px;
+	    margin-right:10px;
+	}
+
+	/* LINE */
+	.dropdown hr{
+	    border:none;
+	    border-top:1px solid #ddd;
+	}
+	.auth-buttons{
+	    display: flex;
+	    gap: 10px; /* dono ke beech space */
+	}
+
+	.auth-buttons button{
+	    flex: 1; /* optional: equal width */
+	}
+</style>
+<header>
+    <div class="logo">Shop<span>Now</span></div>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <!--<a href="product.html">Products</a>-->
+    </nav>
+
+	<div class="right-icons">
+		
+		<!-- WISHLIST ICON (LOGIN ONLY) -->
+		<nav>
+		<div class="icon-box" id="wishlistIcon">
+		    <a href="wishlist.html">
+		        <i class="fa-regular fa-heart"></i>
+		        <span>Wishlist</span>
+		    </a>
+		</div>
+		</nav>
+
+	    <!-- Profile Dropdown -->
+		<div class="icon-box profile-menu">
+
+		    <div class="profile-btn">
+		        <i class="fa-regular fa-user"></i>
+		        <span>Profile</span>
+		    </div>
+
+		    <div class="dropdown" id="profileDropdown">
+
+		        <!-- DEFAULT CONTENT (NOT LOGGED IN) -->
+		        <h3>Hello User</h3>
+		        <p>To access your account</p>
+
+				<div class="auth-buttons">
+				    <button onclick="window.location.href='signup.html'">Sign Up</button>
+				    <button onclick="window.location.href='login.html'">Log In</button>
+				</div>
+
+		        <hr>
+
+				<a href="#" onclick="openOrders()">
+				<i class="fa-solid fa-bag-shopping"></i>
+				My Orders
+				</a>
+
+		        <hr>
+
+
+		    </div>
+		</div>
+
+	    <!-- Cart -->
+		<nav>
+	    <div class="icon-box">
+			<a href="cart.html">
+	        <i class="fa-solid fa-cart-shopping"></i>
+	        <span>Cart</span>
+			</a>
+	    </div>
+		</nav>
+
+	</div>
+</header>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Track Order</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* SAME YOUR DESIGN (UNCHANGED) */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+
+body{background:#f5f5f5;}
+
+.track-section{padding:40px 60px;min-height:100vh;}
+
+.track-title{text-align:center;margin-bottom:35px;font-size:40px;}
+
+.track-card{
+background:white;padding:35px;border-radius:18px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+max-width:950px;margin:auto;
+}
+
+.product-box{
+display:flex;gap:20px;align-items:center;
+padding-bottom:25px;border-bottom:1px solid #eee;
+margin-bottom:30px;flex-wrap:wrap;
+}
+
+.product-box img{
+width:120px;height:120px;border-radius:12px;
+object-fit:cover;background:#eee;
+}
+
+.product-info h2{font-size:26px;margin-bottom:10px;}
+
+.product-info p{margin-bottom:8px;color:#666;font-size:15px;}
+
+.track-top{
+display:flex;justify-content:space-between;
+align-items:center;flex-wrap:wrap;
+gap:20px;padding-bottom:25px;
+border-bottom:1px solid #eee;margin-bottom:35px;
+}
+
+.order-id{font-size:28px;font-weight:bold;}
+
+.order-status{
+padding:10px 18px;border-radius:30px;
+font-size:14px;font-weight:bold;color:white;
+}
+
+.PLACED{background:#f59e0b;}
+.CONFIRMED{background:#3b82f6;}
+.PACKED{background:#6366f1;}
+.SHIPPED{background:#8b5cf6;}
+.OUT_FOR_DELIVERY{background:#ec4899;}
+.DELIVERED{background:#10b981;}
+.CANCELLED{background:#ef4444;}
+
+.timeline{position:relative;margin-top:20px;padding-left:45px;}
+
+.timeline::before{
+content:'';position:absolute;left:16px;top:0;
+width:4px;height:100%;background:#ddd;
+border-radius:10px;
+}
+
+.timeline-item{position:relative;margin-bottom:35px;}
+
+.timeline-icon{
+position:absolute;left:-45px;top:0;
+width:36px;height:36px;border-radius:50%;
+background:#10b981;display:flex;
+justify-content:center;align-items:center;
+color:white;font-size:14px;
+}
+
+.timeline-content{
+background:#fafafa;padding:20px;
+border-radius:14px;border:1px solid #eee;
+}
+
+.timeline-content h3{font-size:20px;margin-bottom:8px;}
+
+.timeline-content p{color:#666;margin-bottom:10px;}
+
+.timeline-date{font-size:14px;color:#999;}
+
+.empty-box{
+background:white;padding:60px;border-radius:18px;
+text-align:center;font-size:24px;color:#666;
+max-width:700px;margin:auto;
+}
+</style>
+</head>
+
+<body>
+
+<div id="header"></div>
+
+<section class="track-section">
+<h1 class="track-title">🚚 Track Your Order</h1>
+<div id="trackContainer">
+<div class="empty-box">Loading Tracking Details...</div>
+</div>
+</section>
+
+<div id="footer"></div>
+
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+<script>
+	function authHeader(extra = {}) {
+	    return {
+	        "Content-Type": "application/json",
+	        "Authorization":
+	            "Bearer " +
+	            localStorage.getItem("accessToken"),
+	        ...extra
+	    };
+	}
+	/* ================= HEADER ================= */
+
+	fetch("header.html")
+	.then(r => r.text())
+	.then(data => {
+
+	document.getElementById("header").innerHTML = data;
+
+	if(typeof loadAuthUI === "function"){
+	loadAuthUI();
+	}
+
+	});
+
+	/* ================= FOOTER ================= */
+
+	fetch("footer.html")
+	.then(r => r.text())
+	.then(data => {
+
+	document.getElementById("footer").innerHTML = data;
+
+	});
+
+	let userId = localStorage.getItem("userId");
+	let token = localStorage.getItem("accessToken");
+
+	if(!userId || !token){
+
+	    Swal.fire(
+	        "Login Required",
+	        "Please login first",
+	        "warning"
+	    ).then(() => {
+	        window.location.href = "login.html";
+	    });
+
+	}
+	
+	
+/* ================= ORDER ID ================= */
+
+const params = new URLSearchParams(window.location.search);
+const orderId = params.get("orderId");
+
+/* ================= STATUS MESSAGE ================= */
+
+function getStatusMessage(status){
+
+switch(status){
+
+case "PLACED":
+return "Order placed successfully.";
+
+case "CONFIRMED":
+return "Seller has confirmed your order.";
+
+case "PACKED":
+return "Your order is packed and ready.";
+
+case "SHIPPED":
+return "Your order has been shipped 🚚";
+
+case "OUT_FOR_DELIVERY":
+return "Your order is out for delivery 🚴";
+
+case "DELIVERED":
+return "Your order has been delivered 🎉";
+
+case "CANCELLED":
+return "Order has been cancelled.";
+
+default:
+return "Status updated.";
+}
+}
+
+/* ================= FETCH PRODUCT ================= */
+
+async function loadProduct(id){
+
+    try{
+
+		let res = await fetchWithAuth(
+		    `http://localhost:8080/api/products/getById/${id}`
+		);
+
+		let result = await res.json();
+
+		console.log("PRODUCT =", result);
+
+		return result.data;
+
+    }catch(error){
+
+        console.log(error);
+
+        return null;
+    }
+}
+
+/* ================= FETCH IMAGE ================= */
+
+async function loadImage(id){
+
+    try{
+
+        let res = await fetchWithAuth(
+            `http://localhost:8080/api/product-images/product/${id}`
+        );
+
+        let result = await res.json();
+
+        if(
+            result.code === 200 &&
+            result.data &&
+            result.data.length > 0
+        ){
+            return result.data[0].imageBase64;
+        }
+
+        return null;
+
+    }catch(error){
+
+        console.log(error);
+        return null;
+    }
+}
+
+/* ================= FETCH ORDER ITEMS ================= */
+
+async function loadOrderItems(){
+
+	let res = await fetchWithAuth(
+	    `http://localhost:8080/api/order-items/${orderId}`
+	);
+
+	let result = await res.json();
+
+
+return result.data || [];
+}
+
+/* ================= MAIN LOAD ================= */
+
+async function loadTracking(){
+
+if(!orderId){
+document.getElementById("trackContainer").innerHTML =
+`<div class="empty-box">Invalid Order ID</div>`;
+return;
+}
+
+try{
+
+let items = await loadOrderItems();
+
+if(items.length === 0){
+document.getElementById("trackContainer").innerHTML =
+`<div class="empty-box">No Tracking Found</div>`;
+return;
+}
+
+let first = items[0];
+
+let product = await loadProduct(first.productId);
+
+let image =
+    await loadImage(first.productId);
+/* latest status */
+let latest = items[items.length - 1];
+
+let timeline = "";
+
+items.forEach(item=>{
+timeline += `
+<div class="timeline-item">
+
+<div class="timeline-icon">
+<i class="fa-solid fa-check"></i>
+</div>
+
+<div class="timeline-content">
+
+<h3>${item.status}</h3>
+
+<p>${getStatusMessage(item.status)}</p>
+
+<div class="timeline-date">
+Updated
+</div>
+
+</div>
+</div>
+`;
+});
+
+document.getElementById("trackContainer").innerHTML = `
+<div class="track-card">
+
+<div class="product-box">
+
+<img src="${
+    image
+    ? `data:image/png;base64,${image}`
+    : 'https://via.placeholder.com/150'
+}">
+
+<div class="product-info">
+<h2>${product?.name || "Product"}</h2>
+<p>Quantity: ${first.quantity}</p>
+<p>Price: ₹${first.price}</p>
+</div>
+
+</div>
+
+
+<div class="track-top">
+
+<div class="order-id">
+Order #${orderId}
+</div>
+
+<div class="order-status ${latest.status}">
+${latest.status}
+</div>
+
+</div>
+
+<div class="timeline">
+${timeline}
+</div>
+
+</div>
+`;
+
+
+}catch(err){
+console.log(err);
+document.getElementById("trackContainer").innerHTML =
+`<div class="empty-box">Error loading tracking</div>`;
+}
+
+}
+
+/* INIT */
+loadTracking();
+
+</script>
+
+</body>
+</html>

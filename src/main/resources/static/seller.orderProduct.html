@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Seller Order Products</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+/* SAME DESIGN (UNCHANGED) */
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f6f9;
+display:flex;
+}
+
+.main{
+margin-left:240px;
+width:100%;
+min-height:100vh;
+}
+
+.container{
+max-width:1300px;
+margin:30px auto;
+padding:25px;
+}
+
+.page-title{
+font-size:32px;
+font-weight:bold;
+margin-bottom:25px;
+color:#111827;
+}
+
+.order-card{
+background:#fff;
+border-radius:16px;
+padding:25px;
+margin-bottom:25px;
+box-shadow:0 5px 20px rgba(0,0,0,0.08);
+}
+
+.order-top{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+flex-wrap:wrap;
+gap:20px;
+padding-bottom:20px;
+border-bottom:1px solid #eee;
+}
+
+.order-id{
+font-size:24px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.customer-info{
+line-height:1.8;
+color:#555;
+font-size:15px;
+}
+
+.status{
+padding:10px 18px;
+border-radius:30px;
+font-size:14px;
+font-weight:bold;
+color:white;
+display:inline-block;
+}
+
+.PLACED{background:#f59e0b;}
+.CONFIRMED{background:#3b82f6;}
+.PACKED{background:#6366f1;}
+.SHIPPED{background:#8b5cf6;}
+.OUT_FOR_DELIVERY{background:#ec4899;}
+.DELIVERED{background:#10b981;}
+.CANCELLED{background:#ef4444;}
+
+.product-box{
+display:flex;
+gap:20px;
+padding:22px 0;
+border-bottom:1px solid #eee;
+align-items:center;
+}
+
+.product-box img{
+width:120px;
+height:120px;
+object-fit:cover;
+border-radius:12px;
+}
+
+.product-info{
+flex:1;
+}
+
+.product-name{
+font-size:22px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.action-box{
+width:250px;
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.status-select{
+padding:12px;
+border:1px solid #ddd;
+border-radius:8px;
+}
+
+.update-btn{
+padding:12px;
+border:none;
+background:#10b981;
+color:white;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.update-btn:hover{
+background:#059669;
+}
+
+.footer{
+text-align:center;
+padding:18px;
+background:#fff;
+margin-top:30px;
+}
+
+@media(max-width:900px){
+
+.main{
+margin-left:0;
+}
+
+.product-box{
+flex-direction:column;
+align-items:flex-start;
+}
+
+.action-box{
+width:100%;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main">
+
+<div id="header"></div>
+
+<div class="container">
+
+<h1 class="page-title">
+📦 Seller Order Products
+</h1>
+
+<div id="ordersContainer"></div>
+
+</div>
+
+<div class="footer">
+© 2026 ShopNow Seller Panel
+</div>
+
+</div>
+
+<script src="security.js"></script>
+<script src="seller-common.js"></script>
+
+<script>
+	function getAuthHeaders() {
+	    return {
+	        "Authorization": "Bearer " + localStorage.getItem("accessToken")
+	    };
+	}
+
+	/* ================= SELLER CHECK ================= */
+
+	const sellerData =
+	    localStorage.getItem("seller") ||
+	    sessionStorage.getItem("seller");
+
+	let seller = null;
+
+	try {
+	    seller = JSON.parse(sellerData);
+	} catch (e) {
+	    seller = null;
+	}
+
+	if (!seller || !seller.id) {
+	    Swal.fire("Login Required", "Please login again", "warning")
+	        .then(() => window.location.href = "seller-login.html");
+	    throw new Error("Login Required");
+	}
+
+	const sellerId = seller.id;
+
+	/* ================= FETCH WRAPPER ================= */
+
+	async function fetchWithAuth(url, options = {}) {
+	    return fetch(url, {
+	        ...options,
+	        headers: {
+	            ...getAuthHeaders(),
+	            ...(options.headers || {})
+	        }
+	    });
+	}
+
+	/* ================= LOAD PRODUCT IMAGE ================= */
+
+	async function loadProductImage(productId) {
+	    try {
+	        const res = await fetchWithAuth(
+	            `http://localhost:8080/api/products/getById/${productId}`
+	        );
+
+	        const result = await res.json();
+
+	        return result?.data?.imageBase64 || null;
+
+	    } catch (err) {
+	        console.log("Image error:", err);
+	        return null;
+	    }
+	}
+
+	/* ================= LOAD ORDERS ================= */
+
+	async function loadSellerOrders() {
+	    try {
+	        const res = await fetchWithAuth(
+	            `http://localhost:8080/api/order-items/seller/${sellerId}`
+	        );
+
+	        const result = await res.json();
+
+	        if (result.code !== 200) {
+	            throw new Error(result.message);
+	        }
+
+	        const items = result.data || [];
+
+	        let grouped = {};
+
+	        items.forEach(item => {
+	            if (!grouped[item.orderId]) grouped[item.orderId] = [];
+	            grouped[item.orderId].push(item);
+	        });
+
+	        let html = "";
+
+	        for (let orderId in grouped) {
+
+	            const orderItems = grouped[orderId];
+
+	            let productsHtml = "";
+
+	            /* ✅ FIX: use for loop for async */
+	            for (let i = 0; i < orderItems.length; i++) {
+
+	                const item = orderItems[i];
+
+	                /* ✅ IMAGE FIX */
+	                let image = await loadProductImage(item.productId);
+
+	                let imgSrc = image
+	                    ? `data:image/png;base64,${image}`
+	                    : "/images/no-image.png";
+
+	                const uniqueId = `${orderId}-${i}`;
+
+	                productsHtml += `
+	                <div class="product-box">
+
+	                    <img src="${imgSrc}">
+
+	                    <div class="product-info">
+	                        <div class="product-name">${item.productName || "Product"}</div>
+	                        <p><b>Qty:</b> ${item.quantity}</p>
+	                        <p><b>Price:</b> ₹${item.price}</p>
+	                        <p><b>Subtotal:</b> ₹${item.subtotal}</p>
+	                    </div>
+
+	                    <div class="action-box">
+
+	                        <select class="status-select" id="status-${uniqueId}">
+	                            ${["PLACED","CONFIRMED","PACKED","SHIPPED","OUT_FOR_DELIVERY","DELIVERED","CANCELLED"]
+	                                .map(s => `
+	                                    <option value="${s}" ${item.status === s ? "selected" : ""}>
+	                                        ${s}
+	                                    </option>
+	                                `).join("")}
+	                        </select>
+
+	                        <button class="update-btn"
+	                            onclick="updateStatus('${item.id}', '${uniqueId}')">
+	                            Update
+	                        </button>
+
+	                    </div>
+
+	                </div>`;
+	            }
+
+	            html += `
+	            <div class="order-card">
+
+	                <div class="order-top">
+	                    <h2>Order #${orderId}</h2>
+	                </div>
+
+	                ${productsHtml}
+
+	            </div>`;
+	        }
+
+	        document.getElementById("ordersContainer").innerHTML = html;
+
+	    } catch (err) {
+	        console.log(err);
+	        Swal.fire("Error", "Failed to load orders", "error");
+	    }
+	}
+
+	/* ================= UPDATE STATUS ================= */
+
+	async function updateStatus(orderItemId, uniqueId) {
+
+	    const el = document.getElementById(`status-${uniqueId}`);
+
+	    if (!el) {
+	        Swal.fire("Error", "Status not found", "error");
+	        return;
+	    }
+
+	    const status = el.value;
+
+	    if (!orderItemId || orderItemId === "undefined") {
+	        Swal.fire("Error", "Invalid Order Item ID", "error");
+	        return;
+	    }
+
+	    try {
+	        const res = await fetchWithAuth(
+	            `http://localhost:8080/api/order-items/status/${orderItemId}?status=${status}`,
+	            {
+	                method: "PUT"
+	            }
+	        );
+
+	        const result = await res.json();
+
+	        if (result.code === 200) {
+	            Swal.fire("Success", "Status Updated", "success");
+	            loadSellerOrders();
+	        } else {
+	            Swal.fire("Error", result.message || "Failed", "error");
+	        }
+
+	    } catch (err) {
+	        console.log(err);
+	        Swal.fire("Error", "Server error", "error");
+	    }
+	}
+	
+	// ================= INIT PAGE =================
+
+		window.addEventListener("DOMContentLoaded", () => {
+
+		    loadComponent("header", "seller-header.html");
+		    loadComponent("sidebar", "seller-sidebar.html");
+
+		    initPage();
+		});
+
+	/* INIT */
+	loadSellerOrders();
+
+</script>
+
+</body>
+</html>

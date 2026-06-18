@@ -1,0 +1,55 @@
+
+<style>
+	/* RESET */
+	*{
+	margin:0;
+	padding:0;
+	box-sizing:border-box;
+	font-family:Arial, sans-serif;
+	}
+
+	body{
+	display: flex;
+	min-height:100vh;
+	background:#f4f6f9;
+	}
+
+	/* SIDEBAR */
+	.sidebar{
+	width:240px;
+	background:#111;
+	color:#fff;
+	padding:20px;
+	position:fixed;
+	height:100%;
+	}
+
+	.sidebar h2{
+	text-align:center;
+	margin-bottom:30px;
+	color:#ff8800;
+	}
+
+	.sidebar a{
+	display:block;
+	color:#fff;
+	padding:12px;
+	margin:8px 0;
+	text-decoration:none;
+	border-radius:6px;
+	transition:0.3s;
+	}
+
+	.sidebar a:hover{
+	background:#ff8800;
+	}
+</style>
+<div class="sidebar">
+<h2>ShopNow</h2>
+
+<a href="seller-dashboard.html"><i class="fa fa-home"></i> Dashboard</a>
+<a href="seller-products.html"><i class="fa fa-box"></i> All products</a>
+<a href="seller-addProduct.html"><i class="fa fa-plus"></i> Add Product</a>
+<a href="seller.updateProduct.html"><i class="fa fa-pen"></i> Update Product</a>
+<a href="seller.orderProduct.html"><i class="fa fa-chart-line"></i> Orders</a>
+</div>

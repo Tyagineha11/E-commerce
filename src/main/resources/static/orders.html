@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Orders</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+
+/* SAME YOUR DESIGN (UNCHANGED) */
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+}
+
+.orders-section{
+padding:40px 60px;
+min-height:100vh;
+}
+
+.orders-title{
+text-align:center;
+font-size:40px;
+margin-bottom:35px;
+}
+
+.order-card{
+background:white;
+padding:25px;
+border-radius:18px;
+margin-bottom:25px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+.order-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:15px;
+padding-bottom:20px;
+border-bottom:1px solid #eee;
+}
+
+.order-number{
+font-size:24px;
+font-weight:bold;
+}
+
+.order-date{
+color:#666;
+font-size:15px;
+}
+
+.product-box{
+display:flex;
+gap:18px;
+padding:20px 0;
+border-bottom:1px solid #eee;
+align-items:center;
+}
+
+.product-box img{
+width:100px;
+height:100px;
+object-fit:cover;
+border-radius:12px;
+background:#eee;
+}
+
+.product-info{
+flex:1;
+}
+
+.product-info h3{
+font-size:22px;
+margin-bottom:10px;
+}
+
+.product-info p{
+margin-bottom:6px;
+color:#666;
+}
+
+.product-price{
+font-size:22px;
+font-weight:bold;
+color:#10b981;
+margin-top:10px;
+}
+
+.track-btn{
+padding:12px 18px;
+border:none;
+background:#3b82f6;
+color:white;
+border-radius:10px;
+cursor:pointer;
+font-size:15px;
+margin-top:15px;
+}
+
+.empty-orders{
+background:white;
+padding:70px;
+border-radius:18px;
+text-align:center;
+}
+
+.shop-btn{
+margin-top:20px;
+padding:14px 24px;
+border:none;
+background:#10b981;
+color:white;
+border-radius:10px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="header"></div>
+
+<section class="orders-section">
+
+<h1 class="orders-title">📦 My Orders</h1>
+
+<div id="ordersContainer"></div>
+
+</section>
+
+<div id="footer"></div>
+
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+<script>
+
+	/* ================= HEADER ================= */
+
+	fetch("header.html")
+	.then(res => res.text())
+	.then(data => {
+
+	document.getElementById("header").innerHTML = data;
+
+	if(typeof loadAuthUI === "function"){
+	loadAuthUI();
+	}
+
+	});
+
+	/* ================= FOOTER ================= */
+
+	fetch("footer.html")
+	.then(res => res.text())
+	.then(data => {
+
+	document.getElementById("footer").innerHTML = data;
+
+	});
+	
+	function authHeader(extra = {}) {
+		    return {
+		        "Content-Type": "application/json",
+		        "Authorization":
+		            "Bearer " +
+		            localStorage.getItem("accessToken"),
+		        ...extra
+		    };
+		}
+	
+	/* USER */
+	let userId = localStorage.getItem("userId");
+	
+	if(!userId){
+	Swal.fire("Login Required","Please login first","warning")
+	.then(()=>window.location.href="login.html");
+	}
+	
+	/* PRODUCT */
+	async function loadProduct(productId){
+
+	    try{
+
+	        let response = await fetchWithAuth(
+	            `http://localhost:8080/api/products/getById/${productId}`
+	        );
+
+	        let result = await response.json();
+
+	        console.log("PRODUCT RESPONSE =", result);
+
+	        return result.data;
+
+	    }catch(error){
+
+	        console.log(error);
+	        return null;
+
+	    }
+	}
+
+/* IMAGE */
+async function loadProductImage(productId){
+
+    try{
+
+        let response = await fetchWithAuth(
+            `http://localhost:8080/api/product-images/product/${productId}`
+        );
+
+        let result = await response.json();
+
+        if(result.code === 200 &&
+           result.data &&
+           result.data.length > 0){
+
+            return result.data[0].imageBase64;
+        }
+
+        return null;
+
+    }catch(error){
+
+        console.log(error);
+        return null;
+
+    }
+}
+
+/* LOAD ORDERS */
+async function loadOrders(){
+
+	let response = await fetchWithAuth(
+	    `http://localhost:8080/api/orders/user/${userId}`
+	);
+
+	let result = await response.json();
+
+let orders = result.data || [];
+
+let container = document.getElementById("ordersContainer");
+
+if(orders.length === 0){
+container.innerHTML = `
+<div class="empty-orders">
+<i class="fa-solid fa-box-open" style="font-size:80px;color:#ccc;"></i>
+<h2>No Orders Found</h2>
+</div>`;
+return;
+}
+
+let html = "";
+
+/* ORDERS LOOP */
+for(let order of orders){
+
+let productsHtml = "";
+
+/* ITEMS LOOP */
+/* ITEMS LOOP */
+for(let item of order.items){
+
+    let productId =
+        item.productId ||
+        item.product?.id;
+
+    let product = await loadProduct(productId);
+
+    console.log("PRODUCT =", product);
+
+let image = await loadProductImage(productId);
+    let productName =
+        product?.name ||
+        item.productName ||
+        "Product";
+
+    productsHtml += `
+    <div class="product-box">
+
+        <img
+            src="${
+                image
+                ? `data:image/png;base64,${image}`
+                : 'https://via.placeholder.com/150'
+            }"
+            alt="${productName}"
+        >
+
+        <div class="product-info">
+
+            <h3>${productName}</h3>
+
+            <p>Qty : ${item.quantity}</p>
+
+            <p>Subtotal : ₹${item.subtotal}</p>
+
+            <p>
+                Status :
+                <strong>${item.status || "PENDING"}</strong>
+            </p>
+
+            <p>
+                Payment :
+                <strong style="
+                    color:${
+                        order.paymentStatus === 'PAID'
+                        ? '#10b981'
+                        : '#ef4444'
+                    };
+                ">
+                    ${order.paymentStatus || "PENDING"}
+                </strong>
+            </p>
+
+            <div class="product-price">
+                ₹${order.finalAmount}
+            </div>
+
+        </div>
+
+    </div>
+    `;
+}
+
+html += `
+<div class="order-card">
+
+<div class="order-header">
+<div>
+<div class="order-number">Order #${order.orderNumber}</div>
+<div class="order-date">${new Date(order.createdAt).toLocaleString()}</div>
+</div>
+</div>
+
+${productsHtml}
+
+<button class="track-btn"
+onclick="goToTrack(${order.orderId || order.id})">
+Track Order
+</button>
+
+</div>
+`;
+}
+
+container.innerHTML = html;
+}
+
+/* TRACK */
+function goToTrack(orderId){
+if(!orderId){
+Swal.fire("Error","Order ID missing","error");
+return;
+}
+window.location.href = `track.html?orderId=${orderId}`;
+}
+
+/* INIT */
+loadOrders();
+
+</script>
+
+</body>
+</html>

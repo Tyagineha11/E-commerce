@@ -1,0 +1,122 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+	/* TOPBAR */
+	.topbar{
+	background:#111827;
+	color:#fff;
+	padding:15px 25px;
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	box-shadow:0 2px 10px rgba(0,0,0,0.2);
+	}
+
+	.title{
+	font-size:20px;
+	font-weight:700;
+	}
+
+	/* PROFILE */
+	.profile-menu{
+	position:relative;
+	display:inline-block;
+	padding-bottom:10px; /* IMPORTANT FIX */
+	}
+
+	.profile-btn{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	padding:8px 12px;
+	border-radius:8px;
+	cursor:pointer;
+	transition:0.3s;
+	}
+
+	.profile-btn:hover{
+	background:rgba(255,255,255,0.15);
+	}
+
+	/* DROPDOWN */
+	.dropdown{
+	position:absolute;
+	right:0;
+	top:45px;
+	width:200px;
+	background:#fff;
+	color:#111;
+	border-radius:10px;
+	box-shadow:0 10px 25px rgba(0,0,0,0.15);
+	padding:15px;
+	display:none;
+	z-index:100;
+	}
+
+	/* FIXED HOVER GAP ISSUE */
+	.profile-menu:hover .dropdown{
+	display:block;
+	}
+
+	.dropdown h3{
+	font-size:15px;
+	margin-bottom:5px;
+	}
+
+	.dropdown p{
+	font-size:12px;
+	color:#6b7280;
+	margin-bottom:10px;
+	}
+
+	.dropdown a{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	text-decoration:none;
+	color:#111;
+	padding:8px 0;
+	font-size:14px;
+	}
+
+	.dropdown hr{
+	margin:10px 0;
+	border:0.5px solid #e5e7eb;
+	}
+</style>
+<!-- TOPBAR -->
+<div class="topbar">
+
+<div class="title">Admin Panel</div>
+
+<!-- PROFILE -->
+<div class="profile-menu">
+
+<div class="profile-btn">
+<i class="fa-regular fa-user"></i>
+<span>Profile</span>
+</div>
+
+<div class="dropdown">
+
+	<h3>Hello <span id="adminName">Admin</span></h3>
+	<p>Manage your account</p>
+
+<hr>
+
+<a href="#" id="logoutBtn">
+<i class="fa-solid fa-right-from-bracket"></i> Logout
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+
+
+
+
+

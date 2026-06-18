@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Category Products</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f5f5;
+}
+
+/* HERO */
+
+.hero{
+height:300px;
+background:
+linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),
+url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1400&q=80');
+
+background-size:cover;
+background-position:center;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+text-align:center;
+color:white;
+}
+
+.hero h1{
+font-size:50px;
+}
+
+/* PRODUCTS */
+
+.products{
+padding:60px 50px;
+}
+
+.products h2{
+text-align:center;
+font-size:38px;
+margin-bottom:35px;
+}
+
+/* PRODUCT GRID */
+
+.product-container{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+}
+
+@media(max-width:1200px){
+
+.product-container{
+grid-template-columns:repeat(4,1fr);
+}
+
+}
+
+@media(max-width:992px){
+
+.product-container{
+grid-template-columns:repeat(3,1fr);
+}
+
+}
+
+@media(max-width:768px){
+
+.product-container{
+grid-template-columns:repeat(2,1fr);
+}
+
+}
+
+@media(max-width:500px){
+
+.product-container{
+grid-template-columns:1fr;
+}
+
+.products{
+padding:40px 20px;
+}
+
+.hero h1{
+font-size:38px;
+}
+
+}
+
+/* CARD */
+
+.card{
+background:white;
+border-radius:14px;
+padding:14px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+position:relative;
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-5px);
+}
+
+.card img{
+width:100%;
+height:220px;
+object-fit:cover;
+border-radius:10px;
+background:#eee;
+}
+
+.card h3{
+margin:12px 0 8px;
+font-size:20px;
+color:#111827;
+}
+
+.card p{
+color:green;
+font-size:20px;
+font-weight:bold;
+}
+
+/* BUTTONS */
+
+.btn-group{
+display:flex;
+gap:8px;
+margin-top:15px;
+}
+
+.view-btn,
+.cart-btn{
+flex:1;
+padding:11px;
+border:none;
+border-radius:8px;
+color:white;
+cursor:pointer;
+font-size:14px;
+font-weight:bold;
+transition:0.3s;
+}
+
+.view-btn{
+background:#3b82f6;
+}
+
+.view-btn:hover{
+background:#2563eb;
+}
+
+.cart-btn{
+background:#10b981;
+}
+
+.cart-btn:hover{
+background:#059669;
+}
+
+/* WISHLIST */
+
+.wishlist{
+position:absolute;
+top:10px;
+right:10px;
+background:white;
+width:34px;
+height:34px;
+border-radius:50%;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+cursor:pointer;
+z-index:2;
+
+box-shadow:0 2px 8px rgba(0,0,0,0.15);
+}
+
+.wishlist i{
+color:#ff3b5c;
+font-size:18px;
+}
+
+/* OUT OF STOCK */
+
+.image-wrapper{
+position:relative;
+width:100%;
+}
+
+.out-stock-img{
+filter:blur(3px) brightness(0.6);
+}
+
+.stock-overlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:220px;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+background:rgba(0,0,0,0.35);
+
+color:white;
+font-size:24px;
+font-weight:bold;
+
+border-radius:10px;
+letter-spacing:1px;
+}
+
+/* EMPTY */
+
+.no-products{
+background:white;
+padding:50px;
+border-radius:12px;
+font-size:24px;
+text-align:center;
+grid-column:1/-1;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<div id="header"></div>
+
+<!-- HERO -->
+
+<section class="hero">
+
+<div>
+
+<h1 id="pageTitle">
+Products
+</h1>
+
+</div>
+
+</section>
+
+<!-- PRODUCTS -->
+
+<section class="products">
+
+<h2 id="categoryTitle">
+Category Products
+</h2>
+
+<div
+class="product-container"
+id="productContainer">
+</div>
+
+</section>
+
+<!-- FOOTER -->
+
+<div id="footer"></div>
+
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+<script>
+
+function authHeader(extra = {}) {
+    const token = localStorage.getItem("accessToken");
+
+    return {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: "Bearer " + token } : {}),
+        ...extra
+    };
+}
+
+/* =========================
+GET URL DATA
+========================= */
+
+const params = new URLSearchParams(window.location.search);
+
+const categoryId = params.get("id");
+const categoryName = params.get("name");
+
+/* =========================
+USER
+========================= */
+
+let userId = localStorage.getItem("userId") || 16;
+let wishlistSet = new Set();
+
+/* =========================
+TITLE
+========================= */
+
+document.getElementById("pageTitle").innerText =
+    categoryName || "Products";
+
+document.getElementById("categoryTitle").innerText =
+    (categoryName || "Category") + " Products";
+
+/* =========================
+HEADER / FOOTER
+========================= */
+
+fetch("header.html")
+    .then(res => res.text())
+    .then(data => {
+        document.getElementById("header").innerHTML = data;
+        if (typeof loadAuthUI === "function") loadAuthUI();
+    });
+
+fetch("footer.html")
+    .then(res => res.text())
+    .then(data => {
+        document.getElementById("footer").innerHTML = data;
+    });
+
+/* =========================
+INIT
+========================= */
+
+init();
+
+async function init() {
+    await loadWishlist();
+    loadProducts();
+}
+
+/* =========================
+LOAD WISHLIST (SAFE)
+========================= */
+
+async function loadWishlist() {
+
+    if (!userId) return;
+
+    try {
+
+        let res = await fetch(
+            "http://localhost:8080/api/wishlist/get",
+            { headers: authHeader({ userId }) }
+        );
+
+        let data = await res.json();
+
+        // ✅ SAFE CHECK (fix 401 crash)
+        if (!res.ok || !Array.isArray(data)) {
+            wishlistSet.clear();
+            return;
+        }
+
+        wishlistSet.clear();
+
+        data.forEach(i => {
+            wishlistSet.add(i.productId);
+        });
+
+    } catch (error) {
+        console.log("Wishlist error:", error);
+    }
+}
+
+/* =========================
+LOAD PRODUCTS (SAFE)
+========================= */
+
+function loadProducts() {
+
+    fetch(`http://localhost:8080/api/products/category/${categoryId}`, {
+        headers: authHeader()
+    })
+        .then(res => res.json())
+        .then(data => {
+
+            // ✅ SAFE CHECK
+            if (!Array.isArray(data)) {
+                renderProducts([]);
+                return;
+            }
+
+            renderProducts(data);
+        })
+        .catch(err => {
+            console.log(err);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Failed to load products"
+            });
+        });
+}
+
+/* =========================
+RENDER PRODUCTS
+========================= */
+
+function renderProducts(products) {
+
+    const container = document.getElementById("productContainer");
+
+    if (!Array.isArray(products) || products.length === 0) {
+        container.innerHTML = `
+            <div class="no-products">No Products Found</div>
+        `;
+        return;
+    }
+
+    let html = "";
+
+    products.forEach(product => {
+
+        let isWish = wishlistSet.has(product.id);
+        let isOutOfStock = product.stock === "OUT_OF_STOCK";
+
+        html += `
+        <div class="card">
+
+            <div class="wishlist" onclick="toggleWishlist(${product.id})">
+                <i id="heart-${product.id}"
+                   class="fa-${isWish ? 'solid' : 'regular'} fa-heart"></i>
+            </div>
+
+            <div class="image-wrapper">
+                <img id="img-${product.id}"
+                     class="${isOutOfStock ? 'out-stock-img' : ''}"
+                     src="https://via.placeholder.com/300">
+            </div>
+
+            ${isOutOfStock ? `
+                <div class="stock-overlay">OUT OF STOCK</div>
+            ` : ""}
+
+            <h3>${product.name}</h3>
+            <p>₹${product.discountPrice || product.price}</p>
+
+            <div class="btn-group">
+
+                <button class="view-btn"
+                        onclick="viewProduct(${product.id})">
+                    View
+                </button>
+
+                ${!isOutOfStock ? `
+                    <button class="cart-btn"
+                            onclick="addToCart(${product.id})">
+                        Add To Cart
+                    </button>
+                ` : `
+                    <button class="cart-btn"
+                            disabled
+                            style="background:#9ca3af;cursor:not-allowed;">
+                        Out Of Stock
+                    </button>
+                `}
+            </div>
+
+        </div>`;
+    });
+
+    container.innerHTML = html;
+
+    products.forEach(loadImage);
+}
+
+/* =========================
+LOAD IMAGE (SAFE)
+========================= */
+
+async function loadImage(product) {
+
+    try {
+
+        let res = await fetch(
+            `http://localhost:8080/api/product-images/product/${product.id}`
+        );
+
+        let data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+            const img = document.getElementById(`img-${product.id}`);
+            if (img) {
+                img.src = `data:image/jpeg;base64,${data[0].imageBase64}`;
+            }
+        }
+
+    } catch (e) {
+        console.log("Image error:", e);
+    }
+}
+
+/* =========================
+WISHLIST TOGGLE
+========================= */
+
+async function toggleWishlist(productId) {
+
+    let icon = document.getElementById(`heart-${productId}`);
+    let isWish = wishlistSet.has(productId);
+
+    try {
+
+        let url = isWish
+            ? `http://localhost:8080/api/wishlist/delete/${productId}`
+            : `http://localhost:8080/api/wishlist/add/${productId}`;
+
+        let method = isWish ? "DELETE" : "POST";
+
+        await fetch(url, {
+            method,
+            headers: authHeader({ userId })
+        });
+
+        if (isWish) {
+            wishlistSet.delete(productId);
+            icon.className = "fa-regular fa-heart";
+        } else {
+            wishlistSet.add(productId);
+            icon.className = "fa-solid fa-heart";
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: isWish ? "Removed" : "Added",
+            timer: 1200,
+            showConfirmButton: false
+        });
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+/* =========================
+VIEW PRODUCT
+========================= */
+
+function viewProduct(id) {
+    window.location.href = `product-detail.html?id=${id}`;
+}
+
+/* =========================
+ADD TO CART
+========================= */
+
+async function addToCart(productId) {
+
+    if (!userId) {
+        Swal.fire({
+            icon: "warning",
+            title: "Login Required"
+        });
+        return;
+    }
+
+    try {
+
+        await fetch("http://localhost:8080/api/cart/add", {
+            method: "POST",
+            headers: authHeader(),
+            body: JSON.stringify({
+                productId,
+                quantity: 1
+            })
+        });
+
+        Swal.fire({
+            icon: "success",
+            title: "Added to Cart",
+            timer: 1200,
+            showConfirmButton: false
+        });
+
+    } catch (e) {
+        console.log("Cart error:", e);
+    }
+}
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Manage Address</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+}
+
+/* =========================
+CONTAINER
+========================= */
+
+.address-container{
+max-width:850px;
+margin:50px auto;
+background:white;
+padding:35px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+.address-title{
+text-align:center;
+margin-bottom:30px;
+font-size:32px;
+color:#222;
+}
+
+/* =========================
+ADDRESS CARD
+========================= */
+
+.saved-address{
+padding:25px;
+border:1px solid #e5e5e5;
+border-radius:15px;
+background:#fafafa;
+margin-top:20px;
+}
+
+.saved-address h3{
+margin-bottom:10px;
+font-size:24px;
+color:#222;
+}
+
+.saved-address p{
+margin-bottom:10px;
+color:#555;
+line-height:1.6;
+font-size:15px;
+}
+
+.default-badge{
+display:inline-block;
+background:#10b981;
+color:white;
+padding:6px 14px;
+border-radius:30px;
+font-size:12px;
+margin-bottom:15px;
+font-weight:bold;
+}
+
+/* =========================
+BUTTONS
+========================= */
+
+.action-btns{
+display:flex;
+gap:15px;
+margin-top:20px;
+flex-wrap:wrap;
+}
+
+.action-btns button{
+flex:1;
+padding:13px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+color:white;
+font-size:15px;
+transition:0.3s;
+}
+
+.edit-btn{
+background:#3b82f6;
+}
+
+.edit-btn:hover{
+background:#2563eb;
+}
+
+.delete-btn{
+background:#ef4444;
+}
+
+.delete-btn:hover{
+background:#dc2626;
+}
+
+.checkout-btn{
+background:#10b981;
+}
+
+.checkout-btn:hover{
+background:#059669;
+}
+
+.add-btn{
+margin-top:20px;
+width:100%;
+padding:15px;
+background:#10b981;
+color:white;
+border:none;
+border-radius:10px;
+font-size:17px;
+cursor:pointer;
+}
+
+/* =========================
+FORM
+========================= */
+
+#addressForm{
+display:none;
+margin-top:30px;
+}
+
+.form-group{
+margin-bottom:18px;
+}
+
+.form-group label{
+display:block;
+margin-bottom:8px;
+font-weight:bold;
+color:#333;
+}
+
+.form-group input{
+width:100%;
+padding:14px;
+border:1px solid #ddd;
+border-radius:8px;
+font-size:15px;
+outline:none;
+transition:0.3s;
+background:#fff;
+}
+
+.form-group input:focus{
+border-color:#10b981;
+}
+
+/* =========================
+GRID
+========================= */
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:18px;
+}
+
+/* =========================
+CHECKBOX
+========================= */
+
+.checkbox{
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:10px;
+}
+
+.checkbox input{
+width:18px;
+height:18px;
+}
+
+/* =========================
+SAVE BUTTON
+========================= */
+
+.save-btn{
+width:100%;
+padding:15px;
+background:#10b981;
+color:white;
+border:none;
+border-radius:10px;
+font-size:17px;
+cursor:pointer;
+margin-top:20px;
+transition:0.3s;
+}
+
+.save-btn:hover{
+background:#059669;
+}
+
+/* =========================
+NO ADDRESS
+========================= */
+
+.no-address{
+text-align:center;
+padding:40px;
+font-size:18px;
+color:#777;
+}
+
+/* =========================
+RESPONSIVE
+========================= */
+
+@media(max-width:700px){
+
+.grid{
+grid-template-columns:1fr;
+}
+
+.address-container{
+margin:20px;
+padding:25px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="header"></div>
+
+<!-- ADDRESS CONTAINER -->
+
+<div class="address-container">
+
+<h1 class="address-title">
+📍 Manage Address
+</h1>
+
+<!-- ADDRESS CARD -->
+<div id="savedAddressBox"></div>
+
+<!-- ADD NEW BUTTON -->
+<button class="add-btn" onclick="showForm()">
++ Add New Address
+</button>
+
+<!-- ADDRESS FORM -->
+
+<form id="addressForm">
+
+<div class="form-group">
+
+<label>Full Name</label>
+
+<input
+type="text"
+id="fullName"
+required
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Phone Number</label>
+
+<input
+type="text"
+id="phone"
+required
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Address Line 1</label>
+
+<input
+type="text"
+id="addressLine1"
+required
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Address Line 2</label>
+
+<input
+type="text"
+id="addressLine2"
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Landmark</label>
+
+<input
+type="text"
+id="landmark"
+>
+
+</div>
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>City</label>
+
+<input
+type="text"
+id="city"
+required
+>
+
+</div>
+
+<div class="form-group">
+
+<label>State</label>
+
+<input
+type="text"
+id="state"
+required
+>
+
+</div>
+
+</div>
+
+<div class="grid">
+
+<div class="form-group">
+
+<label>Country</label>
+
+<input
+type="text"
+id="country"
+required
+>
+
+</div>
+
+<div class="form-group">
+
+<label>Pincode</label>
+
+<input
+type="text"
+id="pincode"
+required
+>
+
+</div>
+
+</div>
+
+<div class="checkbox">
+
+<input type="checkbox" id="isDefault">
+
+<label for="isDefault">
+Set as default address
+</label>
+
+</div>
+
+<button type="submit" class="save-btn">
+Save Address
+</button>
+
+</form>
+
+</div>
+
+<!-- FOOTER -->
+<div id="footer"></div>
+
+<!-- AUTH -->
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+
+<script>
+
+/* =========================
+HEADER
+========================= */
+
+fetch("header.html")
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("header").innerHTML = data;
+
+if(typeof loadAuthUI === "function"){
+loadAuthUI();
+}
+
+});
+
+/* =========================
+FOOTER
+========================= */
+
+fetch("footer.html")
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("footer").innerHTML = data;
+
+});
+
+function authHeader(extra = {}) {
+
+    const token =
+    localStorage.getItem("accessToken");
+
+    return {
+        ...(token && {
+            Authorization:
+            "Bearer " + token
+        }),
+        ...extra
+    };
+
+}
+/* =========================
+USER ID
+========================= */
+
+let userId = localStorage.getItem("userId");
+
+let addressId = null;
+
+if(!userId){
+
+Swal.fire({
+icon:"warning",
+title:"Login Required",
+text:"Please login first"
+})
+.then(() => {
+
+window.location.href = "login.html";
+
+});
+
+}
+
+/* =========================
+SHOW FORM
+========================= */
+
+function showForm(){
+
+document.getElementById("addressForm")
+.style.display = "block";
+
+}
+
+/* =========================
+HIDE FORM
+========================= */
+
+function hideForm(){
+
+document.getElementById("addressForm")
+.style.display = "none";
+
+}
+
+/* =========================
+CLEAR FORM
+========================= */
+
+function clearForm(){
+
+document.getElementById("addressForm").reset();
+
+addressId = null;
+
+}
+
+/* =========================
+LOAD ADDRESS
+========================= */
+
+async function loadAddress(){
+
+try{
+
+	let response = await fetchWithAuth(
+	    `http://localhost:8080/api/addresses/get?userId=${userId}`
+	);
+
+	let result = await response.json();
+
+	console.log(result);
+
+if(result.code === 200 && result.data.length > 0){
+
+let addressList = result.data;
+
+let html = "";
+
+addressList.forEach(address => {
+
+html += `
+
+<div class="saved-address">
+
+${address.isDefault
+? `<div class="default-badge">Default Address</div>`
+: ""}
+
+<h3>${address.fullName}</h3>
+
+<p>
+${address.addressLine1}
+${address.addressLine2 ? "," + address.addressLine2 : ""}
+</p>
+
+<p>
+${address.city},
+${address.state},
+${address.country}
+- ${address.pincode}
+</p>
+
+<p>
+📞 ${address.phone}
+</p>
+
+<div class="action-btns">
+
+<button
+class="edit-btn"
+onclick='editAddress(${JSON.stringify(address)})'>
+
+Edit Address
+
+</button>
+
+<button
+class="delete-btn"
+onclick="deleteAddress(${address.id})">
+
+Delete
+
+</button>
+
+<button
+class="checkout-btn"
+onclick="goToCheckout()">
+
+Go To Checkout
+
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("savedAddressBox").innerHTML = html;
+
+}else{
+
+document.getElementById("savedAddressBox").innerHTML = `
+
+<div class="no-address">
+No Address Found
+</div>
+
+`;
+
+showForm();
+
+}
+
+}catch(error){
+
+console.log(error);
+
+Swal.fire({
+icon:"error",
+title:"Error",
+text:"Failed to fetch address"
+});
+
+}
+
+}
+
+/* =========================
+EDIT ADDRESS
+========================= */
+
+function editAddress(address){
+
+showForm();
+
+addressId = address.id;
+
+document.getElementById("fullName").value =
+address.fullName || "";
+
+document.getElementById("phone").value =
+address.phone || "";
+
+document.getElementById("addressLine1").value =
+address.addressLine1 || "";
+
+document.getElementById("addressLine2").value =
+address.addressLine2 || "";
+
+document.getElementById("landmark").value =
+address.landmark || "";
+
+document.getElementById("city").value =
+address.city || "";
+
+document.getElementById("state").value =
+address.state || "";
+
+document.getElementById("country").value =
+address.country || "";
+
+document.getElementById("pincode").value =
+address.pincode || "";
+
+document.getElementById("isDefault").checked =
+address.isDefault || false;
+
+window.scrollTo({
+top:document.body.scrollHeight,
+behavior:"smooth"
+});
+
+}
+
+/* =========================
+GO TO CHECKOUT
+========================= */
+
+function goToCheckout(){
+
+window.location.href = "checkout.html";
+
+}
+
+/* =========================
+SAVE ADDRESS
+========================= */
+
+document
+.getElementById("addressForm")
+.addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    let addressData = {
+
+        fullName:
+        document.getElementById("fullName").value.trim(),
+
+        phone:
+        document.getElementById("phone").value.trim(),
+
+        addressLine1:
+        document.getElementById("addressLine1").value.trim(),
+
+        addressLine2:
+        document.getElementById("addressLine2").value.trim(),
+
+        landmark:
+        document.getElementById("landmark").value.trim(),
+
+        city:
+        document.getElementById("city").value.trim(),
+
+        state:
+        document.getElementById("state").value.trim(),
+
+        country:
+        document.getElementById("country").value.trim(),
+
+        pincode:
+        document.getElementById("pincode").value.trim(),
+
+        isDefault:
+        document.getElementById("isDefault").checked
+
+    };
+
+    if(
+        !addressData.fullName ||
+        !addressData.phone ||
+        !addressData.addressLine1 ||
+        !addressData.city ||
+        !addressData.state ||
+        !addressData.country ||
+        !addressData.pincode
+    ){
+
+        Swal.fire({
+            icon:"warning",
+            title:"Missing Fields",
+            text:"Please fill all required fields"
+        });
+
+        return;
+    }
+
+    try{
+
+        let url = "";
+        let method = "";
+
+        if(addressId){
+
+            url =
+            `http://localhost:8080/api/addresses/update/${addressId}?userId=${userId}`;
+
+            method = "PUT";
+
+        }else{
+
+            url =
+            `http://localhost:8080/api/addresses/add?userId=${userId}`;
+
+            method = "POST";
+
+        }
+
+		let response = await fetchWithAuth(url,{
+		    method: method,
+		    headers:{
+		        "Content-Type":"application/json"
+		    },
+		    body:JSON.stringify(addressData)
+		});
+
+        let result = await response.json();
+
+        console.log("SAVE RESPONSE:", result);
+
+        if(result.code === 200){
+
+            // Default address set karna hai to
+            if(addressData.isDefault && result.data){
+
+                await setDefaultAddress(result.data.id);
+
+            }
+
+            Swal.fire({
+                icon:"success",
+                title:"Success",
+                text:result.message || "Address Saved"
+            });
+
+            clearForm();
+            hideForm();
+            loadAddress();
+
+        }else{
+
+            Swal.fire({
+                icon:"error",
+                title:"Failed",
+                text:result.message || "Address not saved"
+            });
+
+        }
+
+    }catch(error){
+
+        console.log("SAVE ERROR:", error);
+
+        Swal.fire({
+            icon:"error",
+            title:"Error",
+            text:"Failed to save address"
+        });
+
+    }
+
+});
+async function setDefaultAddress(id){
+
+    try{
+
+        let response = await fetchWithAuth(
+            `http://localhost:8080/api/addresses/default/${id}?userId=${userId}`,
+            {
+                method:"PUT"
+            }
+        );
+
+        let result = await response.json();
+
+        console.log("DEFAULT ADDRESS:", result);
+
+    }catch(error){
+
+        console.log("DEFAULT ERROR:", error);
+
+    }
+
+}
+/* =========================
+DELETE ADDRESS
+========================= */
+
+async function deleteAddress(id){
+
+Swal.fire({
+    title: "Delete Address?",
+    text: "This address will be removed",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444"
+}).then(async (result) => {
+
+    if (result.isConfirmed) {
+
+        try {
+
+			let response = await fetchWithAuth(
+			    `http://localhost:8080/api/addresses/delete/${id}?userId=${userId}`,
+			    {
+			        method:"DELETE",
+			        headers:authHeader()
+			    }
+			);
+
+			let data = await response.json();
+
+            console.log("DELETE RESPONSE:", data);
+
+            Swal.fire({
+                icon: "success",
+                title: "Deleted Successfully"
+            });
+
+            addressId = null;
+            document.getElementById("addressForm").reset();
+
+            loadAddress();
+
+        } catch (error) {
+
+            console.log(error);
+
+            Swal.fire({
+                icon: "error",
+                title: "Delete Failed"
+            });
+
+        }
+    }
+});
+}
+
+/* =========================
+INIT
+========================= */
+
+loadAddress();
+
+</script>
+
+</body>
+</html>

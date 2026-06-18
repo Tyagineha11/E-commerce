@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+min-height:100vh;
+}
+
+
+/* MAIN */
+.main{
+flex:1;
+}
+
+
+
+/* TABLE BOX */
+.table-container{
+margin:20px;
+background:#fff;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.05);
+overflow-x:auto;
+}
+
+/* TOP FILTER */
+.table-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.show-box{
+display:flex;
+align-items:center;
+gap:8px;
+font-size:14px;
+}
+
+.show-box select{
+padding:6px 10px;
+border:1px solid #ddd;
+border-radius:6px;
+}
+
+/* TABLE */
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:12px 15px;
+text-align:left;
+border-bottom:1px solid #e5e7eb;
+}
+
+th{
+background:#f9fafb;
+font-weight:600;
+}
+
+/* BUTTON */
+.view{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+background:#3b82f6;
+color:#fff;
+cursor:pointer;
+}
+
+.delete{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+background:#ef4444;
+color:#fff;
+cursor:pointer;
+}
+
+.delete:hover{
+background:#dc2626;
+}
+
+/* PAGINATION */
+.pagination{
+margin-top:20px;
+display:flex;
+justify-content:center;
+gap:8px;
+flex-wrap:wrap;
+}
+
+.pagination button{
+padding:8px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#e5e7eb;
+}
+
+.pagination button.active{
+background:#111827;
+color:#fff;
+}
+
+.pagination button:hover{
+background:#cbd5e1;
+}
+
+@media(max-width:768px){
+.sidebar{
+width:200px;
+}
+
+.table-top{
+flex-direction:column;
+align-items:flex-start;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="main">
+
+<div id="adminHeader"></div>
+
+
+<div class="table-container">
+
+<div class="table-top">
+
+<h2>Users Detail</h2>
+
+<div class="show-box">
+<label>Show</label>
+
+<select id="rowsPerPage" onchange="changeRows()">
+<option value="5">5</option>
+<option value="10">10</option>
+<option value="15">15</option>
+</select>
+
+<label>Entries</label>
+</div>
+
+</div>
+
+<table>
+	<thead>
+	<tr>
+	<th>ID</th>
+	<th>Owner Name</th>
+	<th>Email</th>
+	<th>Shop</th>
+	<th>Phone</th>
+	<th>Verified</th>
+	<th>Action</th>
+	</tr>
+	</thead>
+
+<tbody id="userTableBody">
+</tbody>
+
+</table>
+
+<div class="pagination" id="pagination"></div>
+
+</div>
+</div>
+</div>
+
+
+<script src="admin-common.js"></script>
+<script src="security.js"></script>
+
+<script>
+/* =========================
+   SIDEBAR + HEADER
+========================= */
+fetch("admin-sidebar.html")
+.then(res => res.text())
+.then(html => document.getElementById("sidebar").innerHTML = html);
+
+fetch("admin-header.html")
+.then(res => res.text())
+.then(html => document.getElementById("adminHeader").innerHTML = html);
+
+/* =========================
+   AUTH FIX (IMPORTANT)
+========================= */
+const token = localStorage.getItem("accessToken");
+const role = localStorage.getItem("role");
+
+if (!token || role !== "ADMIN") {
+    window.location.href = "admin-login.html";
+}
+
+/* =========================
+   DATA
+========================= */
+let sellers = [];
+let currentPage = 1;
+let rowsPerPage = 5;
+
+/* =========================
+   LOAD SELLERS (SAFE)
+========================= */
+function loadSellers() {
+
+    fetch("http://localhost:8080/api/admin/sellers", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(async res => {
+
+        if (!res.ok) {
+            throw new Error("API Error: " + res.status);
+        }
+
+        return res.json();
+    })
+    .then(result => {
+
+        sellers = result?.data || [];
+
+        displaySellers();
+        createPagination();
+
+    })
+    .catch(err => {
+        console.log(err);
+
+        document.getElementById("userTableBody").innerHTML =
+        `<tr><td colspan="7" style="text-align:center;color:red;">
+        Failed to load sellers
+        </td></tr>`;
+    });
+}
+
+/* =========================
+   DISPLAY
+========================= */
+function displaySellers() {
+
+    let tbody = document.getElementById("userTableBody");
+
+    if (!sellers.length) {
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align:center;">No Sellers Found</td>
+        </tr>`;
+        return;
+    }
+
+    let start = (currentPage - 1) * rowsPerPage;
+    let end = start + rowsPerPage;
+
+    let rows = "";
+
+    sellers.slice(start, end).forEach(seller => {
+
+        rows += `
+        <tr>
+            <td>${seller.id || '-'}</td>
+            <td>${seller.ownerName || '-'}</td>
+            <td>${seller.email || '-'}</td>
+            <td>${seller.shopName || '-'}</td>
+            <td>${seller.phone || '-'}</td>
+            <td>
+                <span style="color:${seller.isVerified ? 'green':'red'}">
+                    ${seller.isVerified ? 'Verified' : 'Not Verified'}
+                </span>
+            </td>
+            <td>
+                <button class="view" onclick="viewSeller('${seller.id}')">
+                    View
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+
+    tbody.innerHTML = rows;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+function createPagination() {
+
+    let totalPages = Math.ceil(sellers.length / rowsPerPage);
+    let pagination = document.getElementById("pagination");
+
+    let buttons = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+
+        buttons += `
+        <button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+            ${i}
+        </button>`;
+    }
+
+    pagination.innerHTML = buttons;
+}
+
+/* =========================
+   EVENTS
+========================= */
+function goToPage(page) {
+    currentPage = page;
+    displaySellers();
+    createPagination();
+}
+
+function changeRows() {
+    rowsPerPage = parseInt(document.getElementById("rowsPerPage").value);
+    currentPage = 1;
+    displaySellers();
+    createPagination();
+}
+
+function viewSeller(id) {
+    window.location.href = "seller-details.html?id=" + id;
+}
+
+/* INIT */
+loadSellers();
+</script>
+
+<script>
+initAdminApp();
+</script>
+</body>
+</html>

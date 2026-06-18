@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Details</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+min-height:100vh;
+}
+
+/* MAIN */
+.main{
+flex:1;
+}
+
+
+
+/* CONTENT */
+.content{
+justify-content:center;
+align-items:center;
+padding:40px;
+}
+
+/* CARD */
+.box{
+width:100%;
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+.box h2{
+text-align:center;
+margin-bottom:20px;
+color:#111827;
+}
+
+/* INPUT */
+label{
+font-weight:600;
+display:block;
+margin-top:12px;
+color:#333;
+font-size:14px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:5px;
+border:1px solid #ddd;
+border-radius:8px;
+background:#f9f9f9;
+outline:none;
+}
+
+input:focus{
+border-color:#3b82f6;
+box-shadow:0 0 0 3px rgba(59,130,246,0.15);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
+
+<script>
+fetch("admin-sidebar.html")
+.then(res => res.text())
+.then(data => {
+document.getElementById("sidebar").innerHTML = data;
+});
+</script>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- TOPBAR -->
+<div id="adminHeader"></div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<div class="box">
+
+<h2>User Information</h2>
+
+<label>Name</label>
+<input type="text" id="name" readonly>
+
+<label>Email</label>
+<input type="text" id="email" readonly>
+
+<label>Phone</label>
+<input type="text" id="phone" readonly>
+
+<label>Gender</label>
+<input type="text" id="gender" readonly>
+
+<label>Date of Birth</label>
+<input type="text" id="dob" readonly>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="admin-common.js"></script>
+<script src="security.js"></script>
+<script>
+const token = localStorage.getItem("accessToken");
+const role = localStorage.getItem("role");
+
+if (!token || role !== "ADMIN") {
+    window.location.href = "admin-login.html";
+}
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+/* LOAD SIDEBAR */
+fetch("admin-sidebar.html")
+.then(res => res.text())
+.then(html => {
+    const el = document.getElementById("sidebar");
+    if (el) el.innerHTML = html;
+});
+
+/* LOAD HEADER */
+fetch("admin-header.html")
+.then(res => res.text())
+.then(html => {
+    const el = document.getElementById("adminHeader");
+    if (el) el.innerHTML = html;
+});
+
+/* FETCH USER SAFE WAY */
+async function loadUser() {
+
+    try {
+
+        const res = await fetch(`http://localhost:8080/api/admin/users/${id}`, {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to fetch user");
+        }
+
+        const data = await res.json();
+
+        if (!data || data.code !== 200) {
+            alert("User not found");
+            return;
+        }
+
+        const user = data.data || {};
+
+        document.getElementById("name").value = user.name || "-";
+        document.getElementById("email").value = user.email || "-";
+        document.getElementById("phone").value = user.phone || "-";
+        document.getElementById("gender").value = user.gender || "-";
+        document.getElementById("dob").value = user.dateOfBirth || "-";
+
+    } catch (err) {
+        console.error(err);
+        alert("Error loading user details");
+    }
+}
+
+loadUser();
+</script>
+
+<script>
+fetch("admin-header.html")
+.then(res => res.text())
+.then(data => {
+document.getElementById("adminHeader").innerHTML = data;
+});
+</script>
+</body>
+</html>

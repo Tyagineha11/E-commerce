@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Login</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* SECTION */
+.main-section{
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:40px 20px;
+background:linear-gradient(#71240178,#6112128c);
+}
+
+/* BOX */
+.login-box{
+width:450px;
+background:#fff;
+padding:35px;
+border-radius:18px;
+box-shadow:0 15px 35px rgba(0,0,0,.25);
+animation:fadeIn .6s ease;
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+transform:translateY(25px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+.form-logo{
+text-align:center;
+font-size:34px;
+font-weight:bold;
+margin-bottom:10px;
+color:#111;
+}
+
+.form-logo span{
+color:#ff8800;
+}
+
+h2{
+text-align:center;
+font-size:28px;
+margin-bottom:10px;
+color:#111;
+}
+
+p{
+text-align:center;
+font-size:14px;
+color:#666;
+margin-bottom:25px;
+}
+
+.input-box{
+position:relative;
+margin-bottom:14px;
+}
+
+.input-box i{
+position:absolute;
+top:15px;
+left:14px;
+color:#777;
+font-size:14px;
+}
+
+input{
+width:100%;
+padding:13px 15px 13px 42px;
+border:1px solid #ddd;
+border-radius:8px;
+font-size:15px;
+outline:none;
+background:#fafafa;
+}
+
+input:focus{
+border-color:#ff8800;
+background:#fff;
+box-shadow:0 0 0 3px rgba(255,136,0,.15);
+}
+
+button{
+width:100%;
+padding:13px;
+border:none;
+border-radius:8px;
+background:#ff8800;
+color:#fff;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+margin-top:8px;
+}
+
+button:hover{
+background:#e67600;
+}
+
+.login-link{
+text-align:center;
+margin-top:18px;
+font-size:15px;
+color:#555;
+}
+
+.login-link a{
+color:#ff8800;
+text-decoration:none;
+font-weight:bold;
+}
+
+.login-link a:hover{
+text-decoration:underline;
+}
+
+/* REMEMBER + FORGOT ROW */
+.extra-options{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin:10px 0 18px;
+font-size:14px;
+}
+
+.remember-box{
+display:flex;
+align-items:center;
+gap:8px;
+color:#555;
+cursor:pointer;
+}
+
+.remember-box input{
+width:auto;
+margin:0;
+accent-color:#ff8800;
+cursor:pointer;
+}
+
+.remember-box span{
+font-size:14px;
+}
+
+.forgot-link{
+text-decoration:none;
+color:rgb(0, 0, 255);
+font-weight:600;
+transition:0.3s;
+}
+
+.forgot-link:hover{
+text-decoration:underline;
+color:rgb(0, 0, 128);
+}
+
+@media(max-width:768px){
+.login-box{
+width:100%;
+}
+}
+</style>
+</head>
+
+<body>
+
+<section class="main-section">
+
+<div class="login-box">
+
+<div class="form-logo">Shop<span>Now</span></div>
+
+<h2>Seller Login</h2>
+
+<p>Login to your seller account</p>
+
+<form onsubmit="loginSeller(); return false;">
+
+<div class="input-box">
+<i class="fa fa-envelope"></i>
+<input type="email" id="email" placeholder="Email Address" required>
+</div>
+
+<div class="input-box">
+<i class="fa fa-lock"></i>
+<input type="password" id="password" placeholder="Password" required>
+</div>
+
+<button type="submit">Login</button>
+
+</form>
+
+<!-- NEW ROW -->
+<div class="extra-options">
+
+<label class="remember-box">
+<input type="checkbox" id="rememberMe">
+<span>Remember Me</span>
+</label>
+
+<a href="seller-forget-password.html" class="forgot-link">Forgot Password?</a>
+
+</div>
+
+<div class="login-link">
+Don’t have account?
+<a href="seller-signup.html">Register</a>
+</div>
+
+</div>
+
+</section>
+
+<script>
+	function loginSeller() {
+
+	    let loginData = {
+	        email: document.getElementById("email").value.trim(),
+	        password: document.getElementById("password").value.trim()
+	    };
+
+	    const rememberMe = document.getElementById("rememberMe").checked;
+
+	    fetch("http://localhost:8080/api/sellers/login", {
+	        method: "POST",
+	        headers: { "Content-Type": "application/json" },
+	        body: JSON.stringify(loginData)
+	    })
+	    .then(res => res.json())
+	    .then(data => {
+
+	        if (data.code === 200) {
+
+	            const accessToken = data.data.accessToken;
+	            const refreshToken = data.data.refreshToken;
+
+	            // Always store access token (needed for API calls)
+	            localStorage.setItem("accessToken", accessToken);
+	            localStorage.setItem("role", "SELLER");
+	            localStorage.setItem("seller", JSON.stringify(data.data.seller));
+
+	            // ⭐ IMPORTANT: Remember Me logic
+	            if (rememberMe) {
+	                localStorage.setItem("refreshToken", refreshToken);
+	            } else {
+	                // session-only login
+	                sessionStorage.setItem("refreshToken", refreshToken);
+	            }
+
+	            Swal.fire("Success", "Seller Login Success", "success")
+	            .then(() => window.location.href = "seller-dashboard.html");
+
+	        } else {
+	            Swal.fire("Error", data.message, "error");
+	        }
+	    });
+	}
+</script>
+
+</body>
+</html>

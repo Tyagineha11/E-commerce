@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+min-height:100vh;
+}
+
+.main{
+flex:1;
+}
+
+/* CONTENT */
+.dashboard{
+padding:20px;
+}
+
+/* TITLE */
+.page-title{
+font-size:28px;
+font-weight:700;
+color:#111827;
+margin-bottom:20px;
+}
+
+/* CARDS */
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-bottom:25px;
+}
+
+.card{
+background:#fff;
+padding:22px;
+border-radius:14px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05);
+display:flex;
+justify-content:space-between;
+align-items:center;
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-4px);
+}
+
+.card h4{
+font-size:15px;
+color:#6b7280;
+margin-bottom:8px;
+}
+
+.card h2{
+font-size:28px;
+color:#111827;
+}
+
+.card i{
+font-size:34px;
+color:#2563eb;
+}
+
+/* TABLE SECTION */
+.section-box{
+background:#fff;
+padding:20px;
+border-radius:14px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05);
+margin-bottom:20px;
+overflow-x:auto;
+}
+
+.section-title{
+font-size:20px;
+font-weight:700;
+margin-bottom:15px;
+color:#111827;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:12px;
+text-align:left;
+border-bottom:1px solid #e5e7eb;
+font-size:14px;
+}
+
+th{
+background:#f9fafb;
+}
+
+.status{
+padding:5px 10px;
+border-radius:30px;
+font-size:12px;
+font-weight:600;
+}
+
+.active{
+background:#dcfce7;
+color:#166534;
+}
+
+.pending{
+background:#fee2e2;
+color:#991b1b;
+}
+
+/* QUICK BUTTONS */
+.quick-actions{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+}
+
+.quick-actions a{
+text-decoration:none;
+background:#2563eb;
+color:#fff;
+padding:14px;
+border-radius:10px;
+text-align:center;
+font-weight:600;
+transition:0.3s;
+}
+
+.quick-actions a:hover{
+background:#1d4ed8;
+}
+
+@media(max-width:768px){
+.dashboard{
+padding:15px;
+}
+.page-title{
+font-size:22px;
+}
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- HEADER -->
+<div id="adminHeader"></div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="admin-common.js"></script>
+<script src="security.js"></script>
+
+<script>
+initAdminApp();
+</script>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+<div class="page-title">Admin Dashboard</div>
+
+<!-- TOP CARDS -->
+<div class="cards">
+
+<div class="card">
+<div>
+<h4>Total Users</h4>
+<h2 id="userCount">0</h2>
+</div>
+<i class="fa fa-users"></i>
+</div>
+
+<div class="card">
+<div>
+<h4>Total Sellers</h4>
+<h2 id="sellerCount">0</h2>
+</div>
+<i class="fa fa-store"></i>
+</div>
+
+<div class="card">
+<div>
+<h4>Total Categories</h4>
+<h2 id="categoryCount">0</h2>
+</div>
+<i class="fa fa-list"></i>
+</div>
+
+<div class="card">
+<div>
+<h4>Total Products</h4>
+<h2 id="productCount">0</h2>
+</div>
+<i class="fa fa-box"></i>
+</div>
+
+</div>
+
+<!-- RECENT SELLERS -->
+<div class="section-box">
+
+<div class="section-title">Recent Sellers</div>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Owner Name</th>
+<th>Email</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="sellerTable">
+<tr>
+<td colspan="4">Loading...</td>
+</tr>
+</tbody>
+
+</table>
+
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="section-box">
+
+<div class="section-title">Quick Actions</div>
+
+<div class="quick-actions">
+<a href="admin-user.html">Manage Users</a>
+<a href="admin-seller.html">Manage Sellers</a>
+<a href="admin-category.html">Manage Categories</a>
+<a href="admin-products.html">Manage Products</a>
+</div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+	<script>
+	/* ==============================
+	   AUTH CHECK
+	============================== */
+	const token = localStorage.getItem("accessToken");
+	const role = localStorage.getItem("role");
+
+	if (!token || role !== "ADMIN") {
+	    window.location.href = "admin-login.html";
+	}
+
+	/* ==============================
+	   LOAD COMPONENTS (SIDEBAR + HEADER)
+	============================== */
+	async function loadComponent(id, url) {
+	    try {
+	        const res = await fetch(url);
+	        const html = await res.text();
+	        document.getElementById(id).innerHTML = html;
+	    } catch (err) {
+	        console.error("Component load failed:", err);
+	    }
+	}
+
+	loadComponent("sidebar", "admin-sidebar.html");
+	loadComponent("adminHeader", "admin-header.html");
+
+	/* ==============================
+	   COMMON API FUNCTION
+	============================== */
+	async function apiGet(url) {
+	    try {
+	        const res = await fetch(url, {
+	            method: "GET",
+	            headers: {
+	                "Authorization": `Bearer ${token}`
+	            }
+	        });
+
+	        if (!res.ok) {
+	            throw new Error("API Error");
+	        }
+
+	        return await res.json();
+
+	    } catch (err) {
+	        console.error("API Failed:", url, err);
+	        return null;
+	    }
+	}
+
+	/* ==============================
+	   LOAD DASHBOARD DATA
+	============================== */
+	async function loadDashboard() {
+
+	    /* USERS */
+	    const usersData = await apiGet("http://localhost:8080/api/admin/users");
+	    const users = usersData?.data || [];
+	    document.getElementById("userCount").innerText = users.length;
+
+
+	    /* SELLERS */
+	    const sellersData = await apiGet("http://localhost:8080/api/admin/sellers");
+	    const sellers = sellersData?.data || [];
+
+	    document.getElementById("sellerCount").innerText = sellers.length;
+
+	    let sellerRows = "";
+
+	    if (sellers.length === 0) {
+	        sellerRows = `<tr><td colspan="4">No Sellers Found</td></tr>`;
+	    } else {
+
+	        sellers.slice(0, 5).forEach(seller => {
+	            sellerRows += `
+	                <tr>
+	                    <td>${seller.id ?? '-'}</td>
+	                    <td>${seller.ownerName ?? '-'}</td>
+	                    <td>${seller.email ?? '-'}</td>
+	                    <td>
+	                        <span class="status ${seller.isVerified ? 'active' : 'pending'}">
+	                            ${seller.isVerified ? 'Verified' : 'Pending'}
+	                        </span>
+	                    </td>
+	                </tr>
+	            `;
+	        });
+	    }
+
+	    document.getElementById("sellerTable").innerHTML = sellerRows;
+
+
+	    /* CATEGORIES */
+	    const catData = await apiGet("http://localhost:8080/api/admin/categories");
+	    const categories = catData?.data || [];
+	    document.getElementById("categoryCount").innerText = categories.length;
+
+
+	    /* PRODUCTS */
+	    const prodData = await apiGet("http://localhost:8080/api/admin/products");
+	    const products = prodData?.data || [];
+	    document.getElementById("productCount").innerText = products.length;
+	}
+
+	/* ==============================
+	   INIT DASHBOARD
+	============================== */
+	loadDashboard();
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+
+/* ================= BODY ================= */
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f4f4;
+}
+
+/* ================= PROFILE ================= */
+
+.profile-container{
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:90vh;
+background:linear-gradient(#71240178,#6112128c);
+padding:30px;
+}
+
+.profile-card{
+width:420px;
+background:#fff;
+padding:30px;
+border-radius:15px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
+text-align:center;
+animation:fade .4s ease;
+}
+
+@keyframes fade{
+
+from{
+opacity:0;
+transform:translateY(20px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+
+}
+
+.avatar{
+width:90px;
+height:90px;
+border-radius:50%;
+background:#ff8800;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:35px;
+color:white;
+margin:0 auto 15px;
+}
+
+h2{
+margin:10px 0;
+}
+
+.info{
+text-align:left;
+margin-top:20px;
+}
+
+.info label{
+font-weight:bold;
+font-size:13px;
+color:#555;
+}
+
+.info input{
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:12px;
+border:1px solid #ddd;
+border-radius:8px;
+background:#f9f9f9;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+background:#ff8800;
+color:white;
+font-size:15px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#e67600;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+
+<div id="header"></div>
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+<script>
+
+fetch("header.html")
+.then(res => res.text())
+.then(html => {
+
+document.getElementById("header").innerHTML = html;
+
+if(typeof loadAuthUI === "function"){
+loadAuthUI();
+}
+
+});
+
+</script>
+
+<!-- ================= PROFILE SECTION ================= -->
+
+<div class="profile-container">
+
+<div class="profile-card">
+
+<div class="avatar">
+<i class="fa fa-user"></i>
+</div>
+
+<h2 id="username">Loading...</h2>
+
+<div class="info">
+
+<label>Email</label>
+<input type="text" id="email" readonly>
+
+<label>Phone</label>
+<input type="text" id="phone">
+
+<label>Gender</label>
+<input type="text" id="gender">
+
+<label>Date of Birth</label>
+<input type="date" id="dob">
+
+</div>
+
+<button onclick="updateUser()">
+Update Profile
+</button>
+
+</div>
+
+</div>
+
+<!-- ================= FOOTER ================= -->
+
+<div id="footer"></div>
+
+<script>
+
+fetch("footer.html")
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("footer").innerHTML = data;
+
+});
+
+</script>
+
+<!-- ================= MAIN SCRIPT ================= -->
+
+<script>
+
+// ===============================
+// LOGIN CHECK
+// ===============================
+
+let userId = localStorage.getItem("userId");
+let token = localStorage.getItem("accessToken");
+
+if (!userId || !token) {
+
+    Swal.fire({
+        icon: "warning",
+        title: "Login Required",
+        text: "Please login first"
+    }).then(() => {
+        window.location.href = "login.html";
+    });
+
+}
+
+// ===============================
+// LOAD USER DATA
+// ===============================
+
+async function loadUser() {
+
+    try {
+
+        const response = await fetchWithAuth(
+            `http://localhost:8080/api/users/get/${userId}`,
+            {
+                headers: {
+                    userId: userId
+                }
+            }
+        );
+
+        if (!response) return;
+
+        const result = await response.json();
+
+        console.log("USER => ", result);
+
+        const user = result.data;
+
+        if (user) {
+
+            document.getElementById("username").innerText =
+                user.name || "";
+
+            document.getElementById("email").value =
+                user.email || "";
+
+            document.getElementById("phone").value =
+                user.phone || "";
+
+            document.getElementById("gender").value =
+                user.gender || "";
+
+            document.getElementById("dob").value =
+                user.dateOfBirth || "";
+        }
+
+    } catch (error) {
+
+        console.log(error);
+
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to load profile"
+        });
+
+    }
+}
+
+// ===============================
+// UPDATE USER
+// ===============================
+
+async function updateUser() {
+
+    try {
+
+        let email =
+            document.getElementById("email").value;
+
+        let userData = {
+
+            name:
+                document.getElementById("username").innerText,
+
+            phone:
+                document.getElementById("phone").value,
+
+            gender:
+                document.getElementById("gender").value,
+
+            dateOfBirth:
+                document.getElementById("dob").value
+        };
+
+        const response = await fetchWithAuth(
+            `http://localhost:8080/api/users/update/${email}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(userData)
+            }
+        );
+
+        if (!response) return;
+
+        const result = await response.json();
+
+        console.log(result);
+
+        Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: result.message
+        });
+
+        // Update Local Storage
+
+        let loggedUser =
+            JSON.parse(
+                localStorage.getItem("loggedInUser")
+            );
+
+        if (loggedUser) {
+
+            loggedUser.name = userData.name;
+
+            localStorage.setItem(
+                "loggedInUser",
+                JSON.stringify(loggedUser)
+            );
+
+            // Header refresh
+            if (typeof loadAuthUI === "function") {
+                loadAuthUI();
+            }
+        }
+
+    } catch (error) {
+
+        console.log(error);
+
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Update failed"
+        });
+
+    }
+}
+
+// ===============================
+// INIT
+// ===============================
+
+if (userId && token) {
+    loadUser();
+}
+
+</script>
+
+</body>
+</html>

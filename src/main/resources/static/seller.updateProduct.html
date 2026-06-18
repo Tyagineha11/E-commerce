@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Products</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#f4f6f9;
+display:flex;
+}
+
+.main{
+margin-left:240px;
+width:100%;
+}
+
+.container{
+max-width:1200px;
+margin:30px auto;
+background:#fff;
+padding:25px;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,0.08);
+}
+
+/* TABLE */
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
+
+th{
+background:#111827;
+color:#fff;
+padding:12px;
+text-align:left;
+}
+
+td{
+padding:12px;
+border-bottom:1px solid #eee;
+}
+
+tr:hover{
+background:#f9fafb;
+}
+
+/* ACTION BUTTONS */
+.action-btns{
+display:flex;
+gap:8px;
+}
+
+.edit-btn{
+background:#3b82f6;
+color:#fff;
+border:none;
+padding:6px 10px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.edit-btn:hover{
+background:#2563eb;
+}
+
+.delete-product-btn{
+background:#ef4444;
+color:#fff;
+border:none;
+padding:6px 10px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.delete-product-btn:hover{
+background:#dc2626;
+}
+
+/* MODAL */
+#editModal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+.modal-box{
+background:#fff;
+width:900px;
+max-height:90vh;
+overflow:auto;
+padding:20px;
+border-radius:10px;
+position:relative;
+}
+
+.close{
+position:absolute;
+right:15px;
+top:10px;
+font-size:20px;
+cursor:pointer;
+}
+
+/* FORM */
+.form-group{
+margin-bottom:15px;
+}
+
+label{
+font-weight:bold;
+display:block;
+margin-bottom:5px;
+}
+
+input,
+textarea,
+select{
+width:100%;
+padding:10px;
+border:1px solid #ccc;
+border-radius:6px;
+}
+
+textarea{
+height:80px;
+resize:none;
+}
+
+button{
+padding:10px 15px;
+background:#10b981;
+color:#fff;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#059669;
+}
+
+.footer{
+text-align:center;
+padding:15px;
+background:#fff;
+margin-top:30px;
+box-shadow:0 -2px 10px rgba(0,0,0,0.1);
+}
+
+/* IMAGE BOX */
+.image-box{
+border:1px solid #ddd;
+padding:12px;
+border-radius:10px;
+width:200px;
+background:#fff;
+}
+
+.image-box img{
+width:100%;
+height:160px;
+object-fit:cover;
+border-radius:10px;
+border:1px solid #ddd;
+}
+
+.image-grid{
+display:flex;
+flex-wrap:wrap;
+gap:15px;
+}
+
+.delete-btn{
+background:#ef4444;
+}
+
+.delete-btn:hover{
+background:#dc2626;
+}
+
+.update-btn{
+background:#2563eb;
+}
+
+.update-btn:hover{
+background:#1d4ed8;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main">
+
+<div id="header"></div>
+
+<div class="container">
+
+<h2>My Products</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Name</th>
+<th>Price</th>
+<th>Brand</th>
+<th>Color</th>
+<th>Category</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="productList"></tbody>
+
+</table>
+
+</div>
+
+<div class="footer">
+© 2026 ShopNow Seller Panel
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div id="editModal">
+
+<div class="modal-box">
+
+<span class="close" onclick="closeModal()">✖</span>
+
+<h2>Edit Product</h2>
+
+<!-- MAIN IMAGE -->
+<div class="form-group">
+
+<label>Main Image</label>
+
+<div id="mainImageContainer"></div>
+
+</div>
+
+<!-- SECONDARY IMAGES -->
+<div class="form-group">
+
+<label>Secondary Images</label>
+
+<div id="secondaryImagesContainer"
+class="image-grid"></div>
+
+</div>
+
+<div class="form-group">
+<label>Name</label>
+<input id="e_name">
+</div>
+
+<div class="form-group">
+<label>Description</label>
+<textarea id="e_description"></textarea>
+</div>
+
+<div class="form-group">
+<label>Short Description</label>
+<input id="e_shortDescription">
+</div>
+
+<div class="form-group">
+<label>Price</label>
+<input type="number" id="e_price">
+</div>
+
+<div class="form-group">
+<label>Discount Price</label>
+<input type="number" id="e_discountPrice">
+</div>
+
+<div class="form-group">
+<label>Stock</label>
+
+<select id="e_stock">
+<option value="IN_STOCK">IN STOCK</option>
+<option value="OUT_OF_STOCK">OUT OF STOCK</option>
+</select>
+
+</div>
+
+<div class="form-group">
+<label>Status</label>
+
+<select id="e_status">
+<option value="ACTIVE">ACTIVE</option>
+<option value="INACTIVE">INACTIVE</option>
+</select>
+
+</div>
+
+<div class="form-group">
+<label>Brand</label>
+<input id="e_brand">
+</div>
+
+<div class="form-group">
+<label>Weight</label>
+<input type="number" id="e_weight">
+</div>
+
+<div class="form-group">
+<label>Color</label>
+<input id="e_color">
+</div>
+
+<div class="form-group">
+<label>Size</label>
+<input id="e_size">
+</div>
+
+<div class="form-group">
+<label>Category</label>
+<select id="e_categoryId"></select>
+</div>
+
+<button onclick="updateProduct()">
+Update Product
+</button>
+
+</div>
+</div>
+
+<script src="security.js"></script>
+<script src="seller-common.js"></script>
+
+<script>
+	// ================= COMPONENTS =================
+	loadComponent("header", "seller-header.html");
+	loadComponent("sidebar", "seller-sidebar.html");
+
+	const API = "http://localhost:8080/api/products";
+
+	// ================= AUTH SAFE =================
+	const sellerToken = localStorage.getItem("accessToken");
+	const sellerData = localStorage.getItem("seller"); // 🔥 FIXED (sellerData bug)
+
+	if (!sellerToken || !sellerData) {
+	    Swal.fire({
+	        icon: "warning",
+	        title: "Login Required",
+	        text: "Please login first"
+	    }).then(() => {
+	        window.location.href = "seller-login.html";
+	    });
+
+	    throw new Error("Login Required");
+	}
+
+	const seller = JSON.parse(sellerData);
+	const sellerId = seller.id;
+
+	// ================= GLOBAL STATE =================
+	let editingId = null;
+	let mainImageId = null;
+	let categories = [];
+
+	// ================= AUTH HEADER (FIXED) =================
+	function authHeader(extra = {}) {
+
+	    const token = localStorage.getItem("accessToken");
+
+	    return {
+	        ...(extra || {}),
+	        ...(token ? { "Authorization": "Bearer " + token } : {})
+	    };
+	}
+
+	// ================= INIT =================
+	initPage();
+
+	function initPage() {
+	    loadSellerProfileData();
+	}
+
+	async function loadSellerProfileData() {
+	    await loadCategories();
+	    loadSellerProducts();
+	}
+
+	// ================= LOAD CATEGORIES =================
+	async function loadCategories() {
+	    try {
+	        const res = await fetch(
+	            "http://localhost:8080/api/categories/getAll",
+	            { headers: authHeader() }
+	        );
+
+	        const data = await res.json();
+	        categories = data.data || [];
+
+	    } catch (err) {
+	        console.log("Category error", err);
+	    }
+	}
+
+	// ================= LOAD PRODUCTS =================
+	function loadSellerProducts() {
+
+	    fetch(`${API}/seller/${sellerId}`, {
+	        headers: authHeader()
+	    })
+	    .then(res => res.json())
+	    .then(res => {
+
+	        const data = res.data || [];
+	        let html = "";
+
+	        data.forEach(p => {
+	            html += `
+	            <tr>
+	                <td>${p.name || "-"}</td>
+	                <td>₹${p.price ?? 0}</td>
+	                <td>${p.brand || "-"}</td>
+	                <td>${p.color || "-"}</td>
+	                <td>${p.categoryName || "-"}</td>
+	                <td>${p.status || "-"}</td>
+	                <td>
+	                    <div class="action-btns">
+	                        <button class="edit-btn" onclick="editProduct(${p.id})">Edit</button>
+	                        <button class="delete-product-btn" onclick="deleteProduct(${p.id})">Delete</button>
+	                    </div>
+	                </td>
+	            </tr>`;
+	        });
+
+	        document.getElementById("productList").innerHTML = html;
+	    });
+	}
+
+	// ================= DELETE PRODUCT =================
+	async function deleteProduct(productId) {
+
+	    const result = await Swal.fire({
+	        title: "Delete Product?",
+	        icon: "warning",
+	        showCancelButton: true,
+	        confirmButtonText: "Yes Delete"
+	    });
+
+	    if (!result.isConfirmed) return;
+
+	    await fetch(`${API}/delete/${productId}`, {
+	        method: "DELETE",
+	        headers: authHeader()
+	    });
+
+	    Swal.fire("Deleted", "Product deleted", "success");
+	    loadSellerProducts();
+	}
+
+	// ================= EDIT PRODUCT =================
+	async function editProduct(id) {
+
+	    editingId = id;
+	    mainImageId = null;
+
+	    const res = await fetch(`${API}/getById/${id}`, {
+	        headers: authHeader()
+	    });
+
+	    const data = await res.json();
+	    const p = data.data;
+
+	    document.getElementById("e_name").value = p.name || "";
+	    document.getElementById("e_description").value = p.description || "";
+	    document.getElementById("e_shortDescription").value = p.shortDescription || "";
+	    document.getElementById("e_price").value = p.price || 0;
+	    document.getElementById("e_discountPrice").value = p.discountPrice || 0;
+	    document.getElementById("e_stock").value = p.stock || "IN_STOCK";
+	    document.getElementById("e_status").value = p.status || "ACTIVE";
+	    document.getElementById("e_brand").value = p.brand || "";
+	    document.getElementById("e_weight").value = p.weight || 0;
+	    document.getElementById("e_color").value = p.color || "";
+	    document.getElementById("e_size").value = p.size || "";
+
+	    const dropdown = document.getElementById("e_categoryId");
+	    dropdown.innerHTML = "";
+
+	    categories.forEach(c => {
+	        dropdown.innerHTML += `
+	            <option value="${c.id}" ${Number(c.id) === Number(p.categoryId) ? "selected" : ""}>
+	                ${c.name}
+	            </option>`;
+	    });
+
+	    const imgRes = await fetch(
+	        "http://localhost:8080/api/product-images/product/" + id,
+	        { headers: authHeader() }
+	    );
+
+	    const imgData = await imgRes.json();
+	    const images = imgData.data || [];
+
+	    const mainBox = document.getElementById("mainImageContainer");
+	    const secBox = document.getElementById("secondaryImagesContainer");
+
+	    mainBox.innerHTML = "";
+	    secBox.innerHTML = "";
+
+	    if (images.length > 0) {
+
+	        mainImageId = images[0].id;
+
+	        mainBox.innerHTML = `
+	        <div class="image-box">
+	            <img src="data:image/jpeg;base64,${images[0].imageBase64}">
+	            <input type="file" id="mainImageFile">
+
+	            <button class="update-btn" onclick="updateMainImage()">Update</button>
+	            <button class="delete-btn" onclick="deleteImage(${images[0].id})">Delete</button>
+	        </div>`;
+	    }
+
+	    images.slice(1).forEach(img => {
+	        secBox.innerHTML += `
+	        <div class="image-box">
+	            <img src="data:image/jpeg;base64,${img.imageBase64}">
+	            <input type="file" id="file_${img.id}">
+
+	            <button class="update-btn" onclick="updateSecondaryImage(${img.id})">Update</button>
+	            <button class="delete-btn" onclick="deleteImage(${img.id})">Delete</button>
+	        </div>`;
+	    });
+
+	    document.getElementById("editModal").style.display = "flex";
+	}
+
+	// ================= UPDATE PRODUCT =================
+	async function updateProduct() {
+
+	    try {
+
+	        const payload = {
+	            name: document.getElementById("e_name").value,
+	            description: document.getElementById("e_description").value,
+	            shortDescription: document.getElementById("e_shortDescription").value,
+	            price: Number(document.getElementById("e_price").value),
+	            discountPrice: Number(document.getElementById("e_discountPrice").value),
+	            stock: document.getElementById("e_stock").value,
+	            status: document.getElementById("e_status").value,
+	            brand: document.getElementById("e_brand").value,
+	            weight: Number(document.getElementById("e_weight").value),
+	            color: document.getElementById("e_color").value,
+	            size: document.getElementById("e_size").value,
+	            sellerId: sellerId,
+	            categoryId: Number(document.getElementById("e_categoryId").value)
+	        };
+
+	        const response = await fetch(
+	            `${API}/update/${editingId}`,
+	            {
+	                method: "PUT",
+	                headers: {
+	                    "Content-Type": "application/json",
+	                    ...authHeader()
+	                },
+	                body: JSON.stringify(payload)
+	            }
+	        );
+
+	        const text = await response.text();
+
+	        if (response.ok) {
+
+	            Swal.fire("Success", "Product Updated Successfully", "success");
+	            closeModal();
+	            loadSellerProducts();
+
+	        } else {
+	            Swal.fire("Error", text || "Update Failed", "error");
+	        }
+
+	    } catch (err) {
+	        Swal.fire("Error", err.message, "error");
+	    }
+	}
+
+	// ================= IMAGE FUNCTIONS =================
+	async function updateMainImage() {
+
+	    const file = document.getElementById("mainImageFile").files[0];
+	    if (!file) return Swal.fire("Select image first");
+
+	    const formData = new FormData();
+	    formData.append("files", file);
+
+	    await fetch(`http://localhost:8080/api/product-images/update/${mainImageId}`, {
+	        method: "PUT",
+	        headers: authHeader(),
+	        body: formData
+	    });
+
+	    Swal.fire("Updated", "Main image updated", "success");
+	    editProduct(editingId);
+	}
+
+	async function updateSecondaryImage(imageId) {
+
+	    const file = document.getElementById(`file_${imageId}`).files[0];
+	    if (!file) return Swal.fire("Select image first");
+
+	    const formData = new FormData();
+	    formData.append("files", file);
+
+	    await fetch(`http://localhost:8080/api/product-images/update/${imageId}`, {
+	        method: "PUT",
+	        headers: authHeader(),
+	        body: formData
+	    });
+
+	    Swal.fire("Updated", "Image updated", "success");
+	    editProduct(editingId);
+	}
+
+	async function deleteImage(imageId) {
+
+	    await fetch(`http://localhost:8080/api/product-images/delete/${imageId}`, {
+	        method: "DELETE",
+	        headers: authHeader()
+	    });
+
+	    Swal.fire("Deleted", "Image deleted", "success");
+	    editProduct(editingId);
+	}
+
+	// ================= CLOSE MODAL =================
+	function closeModal() {
+	    document.getElementById("editModal").style.display = "none";
+	}
+</script>
+</body>
+</html>

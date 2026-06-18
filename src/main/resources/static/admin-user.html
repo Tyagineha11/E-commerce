@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#f4f6f9;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+min-height:100vh;
+}
+
+
+/* MAIN */
+.main{
+flex:1;
+}
+
+
+
+/* TABLE BOX */
+.table-container{
+margin:20px;
+background:#fff;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.05);
+overflow-x:auto;
+}
+
+/* TOP FILTER */
+.table-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.show-box{
+display:flex;
+align-items:center;
+gap:8px;
+font-size:14px;
+}
+
+.show-box select{
+padding:6px 10px;
+border:1px solid #ddd;
+border-radius:6px;
+}
+
+/* TABLE */
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:12px 15px;
+text-align:left;
+border-bottom:1px solid #e5e7eb;
+}
+
+th{
+background:#f9fafb;
+font-weight:600;
+}
+
+/* BUTTON */
+.view{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+background:#3b82f6;
+color:#fff;
+cursor:pointer;
+}
+
+.delete{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+background:#ef4444;
+color:#fff;
+cursor:pointer;
+}
+
+.delete:hover{
+background:#dc2626;
+}
+
+/* PAGINATION */
+.pagination{
+margin-top:20px;
+display:flex;
+justify-content:center;
+gap:8px;
+flex-wrap:wrap;
+}
+
+.pagination button{
+padding:8px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#e5e7eb;
+}
+
+.pagination button.active{
+background:#111827;
+color:#fff;
+}
+
+.pagination button:hover{
+background:#cbd5e1;
+}
+
+@media(max-width:768px){
+.sidebar{
+width:200px;
+}
+
+.table-top{
+flex-direction:column;
+align-items:flex-start;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="main">
+
+<div id="adminHeader"></div>
+
+<div class="table-container">
+
+<div class="table-top">
+
+<h2>Users Detail</h2>
+
+<div class="show-box">
+<label>Show</label>
+
+<select id="rowsPerPage" onchange="changeRows()">
+<option value="5">5</option>
+<option value="10">10</option>
+<option value="15">15</option>
+</select>
+
+<label>Entries</label>
+</div>
+
+</div>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Email</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="userTableBody">
+</tbody>
+
+</table>
+
+<div class="pagination" id="pagination"></div>
+
+</div>
+</div>
+</div>
+
+<script src="admin-common.js"></script>
+<script src="security.js"></script>
+<script>
+let users = [];
+let currentPage = 1;
+let rowsPerPage = 5;
+
+// =========================
+// FIXED TOKEN
+// =========================
+const token = localStorage.getItem("accessToken");
+
+if (!token) {
+    Swal.fire({
+        icon: "error",
+        title: "Session Expired",
+        text: "Please login again"
+    }).then(() => {
+        window.location.href = "admin-login.html";
+    });
+}
+
+// =========================
+// LOAD COMPONENTS (SAFE)
+// =========================
+fetch("admin-sidebar.html")
+.then(res => res.text())
+.then(html => {
+    const el = document.getElementById("sidebar");
+    if (el) el.innerHTML = html;
+});
+
+fetch("admin-header.html")
+.then(res => res.text())
+.then(html => {
+    const el = document.getElementById("adminHeader");
+    if (el) el.innerHTML = html;
+});
+
+// =========================
+// FETCH USERS
+// =========================
+function loadUsers() {
+
+    fetch("http://localhost:8080/api/admin/users", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        users = data?.data || [];
+
+        displayUsers();
+        createPagination();
+
+    })
+    .catch(err => console.log(err));
+}
+
+// =========================
+// DISPLAY USERS
+// =========================
+function displayUsers() {
+
+    const tbody = document.getElementById("userTableBody");
+
+    let start = (currentPage - 1) * rowsPerPage;
+    let end = start + rowsPerPage;
+
+    let paginated = users.slice(start, end);
+
+    let rows = "";
+
+    paginated.forEach(user => {
+        rows += `
+        <tr>
+            <td>${user.id || '-'}</td>
+            <td>${user.name || '-'}</td>
+            <td>${user.email || '-'}</td>
+            <td>
+                <button class="view" onclick="viewUser(${user.id})">
+                    View
+                </button>
+
+                
+            </td>
+        </tr>
+        `;
+    });
+
+    tbody.innerHTML = rows;
+}
+
+// =========================
+// PAGINATION
+// =========================
+function createPagination() {
+
+    let totalPages = Math.ceil(users.length / rowsPerPage);
+    let pagination = document.getElementById("pagination");
+
+    let buttons = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+        buttons += `
+        <button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+            ${i}
+        </button>`;
+    }
+
+    pagination.innerHTML = buttons;
+}
+
+// =========================
+// PAGE CHANGE
+// =========================
+function goToPage(page) {
+    currentPage = page;
+    displayUsers();
+    createPagination();
+}
+
+// =========================
+// ROWS CHANGE
+// =========================
+function changeRows() {
+    rowsPerPage = parseInt(document.getElementById("rowsPerPage").value);
+    currentPage = 1;
+    displayUsers();
+    createPagination();
+}
+
+// =========================
+// VIEW USER
+// =========================
+function viewUser(id) {
+    window.location.href = "user-details.html?id=" + id;
+}
+
+
+
+// =========================
+// INIT
+// =========================
+loadUsers();
+</script>
+
+
+
+<script>
+initAdminApp();
+</script>
+</body>
+</html>

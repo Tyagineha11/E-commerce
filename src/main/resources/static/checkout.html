@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout</title>
+
+<!-- Razorpay -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+
+/* YOUR SAME DESIGN */
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+}
+
+.checkout-section{
+padding:40px 60px;
+}
+
+.checkout-title{
+text-align:center;
+font-size:38px;
+margin-bottom:35px;
+}
+
+.checkout-container{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:30px;
+}
+
+.checkout-left{
+display:flex;
+flex-direction:column;
+gap:25px;
+}
+
+.checkout-card{
+background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+.card-title{
+font-size:24px;
+margin-bottom:20px;
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.address-box{
+border:1px solid #ddd;
+padding:18px;
+border-radius:10px;
+background:#f0fdf4;
+}
+
+.address-name{
+font-size:18px;
+font-weight:bold;
+margin-bottom:8px;
+}
+
+.address-text{
+color:#555;
+line-height:1.7;
+}
+
+.default-badge{
+display:inline-block;
+margin-top:10px;
+padding:5px 12px;
+background:#10b981;
+color:white;
+border-radius:20px;
+font-size:12px;
+}
+
+.manage-address-btn{
+margin-top:15px;
+padding:12px 18px;
+background:#10b981;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-size:15px;
+}
+
+.product-box{
+display:flex;
+gap:18px;
+align-items:center;
+border-bottom:1px solid #eee;
+padding:15px 0;
+}
+
+.product-box img{
+width:90px;
+height:90px;
+border-radius:10px;
+object-fit:cover;
+background:#eee;
+}
+
+.product-info{
+flex:1;
+}
+
+.product-price{
+font-size:20px;
+font-weight:bold;
+color:#10b981;
+}
+
+.checkout-summary{
+background:white;
+padding:25px;
+border-radius:15px;
+height:fit-content;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+position:sticky;
+top:20px;
+}
+
+.summary-row{
+display:flex;
+justify-content:space-between;
+margin:18px 0;
+font-size:17px;
+}
+
+.total{
+font-size:24px;
+font-weight:bold;
+border-top:1px solid #ddd;
+padding-top:15px;
+}
+
+.payment-option{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:15px;
+padding:12px;
+border:1px solid #ddd;
+border-radius:10px;
+}
+
+.place-order-btn{
+width:100%;
+padding:16px;
+background:#10b981;
+border:none;
+color:white;
+font-size:18px;
+border-radius:10px;
+cursor:pointer;
+margin-top:25px;
+}
+
+.place-order-btn:hover{
+background:#059669;
+}
+
+.empty-box{
+text-align:center;
+padding:50px;
+color:#777;
+font-size:22px;
+}
+
+@media(max-width:900px){
+
+.checkout-container{
+grid-template-columns:1fr;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="header"></div>
+
+<section class="checkout-section">
+
+<h1 class="checkout-title">🧾 Checkout</h1>
+
+<div class="checkout-container">
+
+<!-- LEFT -->
+<div class="checkout-left">
+
+<!-- ADDRESS -->
+<div class="checkout-card">
+
+<h2 class="card-title">
+<i class="fa-solid fa-location-dot"></i>
+Delivery Address
+</h2>
+
+<div id="addressContainer"></div>
+
+<button class="manage-address-btn"
+onclick="window.location.href='address.html'">
+
+Manage Address
+
+</button>
+
+</div>
+
+<!-- PRODUCTS -->
+<div class="checkout-card">
+
+<h2 class="card-title">
+<i class="fa-solid fa-cart-shopping"></i>
+Cart Products
+</h2>
+
+<div id="productContainer"></div>
+
+</div>
+
+</div>
+
+<!-- RIGHT -->
+<div class="checkout-summary">
+
+<h2>Order Summary</h2>
+
+<div class="summary-row">
+<span>Total Items</span>
+<span id="totalItems">0</span>
+</div>
+
+<div class="summary-row">
+<span>Subtotal</span>
+<span id="subtotal">₹0</span>
+</div>
+
+<div class="summary-row">
+<span>Delivery Charge</span>
+<span id="deliveryCharge">₹0</span>
+</div>
+
+<div class="summary-row total">
+<span>Total</span>
+<span id="grandTotal">₹0</span>
+</div>
+
+<!-- PAYMENT -->
+<div class="payment-method">
+
+<h3>Payment Method</h3>
+
+<label class="payment-option">
+<input type="radio" name="payment" value="COD" checked>
+<span>Cash On Delivery</span>
+</label>
+
+<label class="payment-option">
+<input type="radio" name="payment" value="UPI">
+<span>UPI / QR Payment</span>
+</label>
+
+<label class="payment-option">
+<input type="radio" name="payment" value="CARD">
+<span>Card Payment</span>
+</label>
+
+</div>
+
+<button class="place-order-btn">
+Continue
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<div id="footer"></div>
+
+<script src="security.js"></script>
+<script src="auth.js"></script>
+
+<script>
+
+let userId = localStorage.getItem("userId");
+let token = localStorage.getItem("accessToken");
+
+let subtotal = 0;
+let deliveryCharge = 20;
+let grandTotal = 0;
+
+let selectedPayment = "COD";
+
+window.cartItems = [];
+window.selectedAddress = null;
+
+/* ================= LOGIN CHECK ================= */
+
+if (!userId || !token) {
+
+    Swal.fire("Login Required", "Please login first", "warning")
+        .then(() => window.location.href = "login.html");
+
+}
+
+/* ================= AUTH HEADER ================= */
+
+function authHeader(extra = {}) {
+    return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("accessToken"),
+        ...extra
+    };
+}
+
+/* ================= HEADER ================= */
+
+fetch("header.html")
+.then(r => r.text())
+.then(d => {
+    document.getElementById("header").innerHTML = d;
+    if (typeof loadAuthUI === "function") loadAuthUI();
+});
+
+/* ================= FOOTER ================= */
+
+fetch("footer.html")
+.then(r => r.text())
+.then(d => {
+    document.getElementById("footer").innerHTML = d;
+});
+
+/* ================= PAYMENT CHANGE ================= */
+
+document.addEventListener("change", (e) => {
+    if (e.target.name === "payment") {
+        selectedPayment = e.target.value;
+    }
+});
+
+/* ================= LOAD ADDRESS ================= */
+
+async function loadAddresses() {
+
+    try {
+
+        let response = await fetchWithAuth(
+            `http://localhost:8080/api/addresses/get?userId=${userId}`
+        );
+
+        let result = await response.json();
+
+        console.log("ADDRESS RESPONSE =", result);
+
+        if(result.code !== 200){
+            return;
+        }
+
+        let addresses = result.data || [];
+
+        let container =
+            document.getElementById("addressContainer");
+
+        if(addresses.length === 0){
+
+            container.innerHTML = `
+                <div class="empty-box">
+                    No Address Found
+                </div>
+            `;
+
+            return;
+        }
+
+        let address =
+            addresses.find(a => a.isDefault)
+            || addresses[0];
+
+        window.selectedAddress = address;
+
+        container.innerHTML = `
+            <div class="address-box">
+
+                <div class="address-name">
+                    ${address.fullName}
+                </div>
+
+                <div class="address-text">
+
+                    ${address.addressLine1}
+
+                    ${address.addressLine2
+                        ? ", " + address.addressLine2
+                        : ""}
+
+                    <br>
+
+                    ${address.city},
+                    ${address.state},
+                    ${address.country}
+                    - ${address.pincode}
+
+                    <br><br>
+
+                    📞 ${address.phone}
+
+                </div>
+
+                ${address.isDefault
+                    ? `<div class="default-badge">
+                           Default Address
+                       </div>`
+                    : ""}
+
+            </div>
+        `;
+
+    } catch(err){
+
+        console.log(err);
+
+        Swal.fire(
+            "Error",
+            "Failed to load address",
+            "error"
+        );
+    }
+}
+
+/* ================= LOAD CART ================= */
+
+async function loadCart() {
+
+    try {
+
+        let response = await fetchWithAuth(
+            `http://localhost:8080/api/cart-items?userId=${userId}`
+        );
+
+        let result = await response.json();
+
+        if(result.code === 200){
+            renderCart(result.data);
+        }
+
+    } catch(err){
+        console.log(err);
+    }
+}
+
+/* ================= RENDER CART ================= */
+
+function renderCart(cart) {
+
+    let items = cart?.items || [];
+
+    window.cartItems = items;
+
+    let container = document.getElementById("productContainer");
+
+    if (!items.length) {
+        container.innerHTML = `<div class="empty-box">Cart is empty</div>`;
+        return;
+    }
+
+    let html = "";
+    let totalItems = 0;
+
+    subtotal = 0;
+
+    items.forEach(item => {
+
+        totalItems += item.quantity;
+        subtotal += item.subtotal;
+
+        html += `
+        <div class="product-box">
+            <img id="img-${item.productId}" src="https://via.placeholder.com/150">
+
+            <div class="product-info">
+                <h3>${item.productName}</h3>
+                <p>Qty: ${item.quantity}</p>
+                <p class="product-price">₹${item.price}</p>
+                <p>Subtotal: ₹${item.subtotal}</p>
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    grandTotal = subtotal + deliveryCharge;
+
+    document.getElementById("totalItems").innerText = totalItems;
+    document.getElementById("subtotal").innerText = "₹" + subtotal;
+    document.getElementById("deliveryCharge").innerText = "₹" + deliveryCharge;
+    document.getElementById("grandTotal").innerText = "₹" + grandTotal;
+
+    items.forEach(i => loadImage(i.productId));
+
+}
+
+/* ================= IMAGE ================= */
+
+async function loadImage(productId) {
+
+    try {
+
+        let response = await fetchWithAuth(
+            `http://localhost:8080/api/product-images/product/${productId}`
+        );
+
+        let result = await response.json();
+
+        if(result.data && result.data.length > 0){
+
+            let img =
+            document.getElementById(`img-${productId}`);
+
+            if(img){
+
+                img.src =
+                `data:image/jpeg;base64,${result.data[0].imageBase64}`;
+
+            }
+        }
+
+    } catch(error){
+
+        console.log(error);
+
+    }
+}
+
+/* ================= ORDER PAYLOAD ================= */
+
+function createOrderPayload(paymentId = null, paymentStatus = "PENDING") {
+
+    return {
+        userId: Number(userId),
+        addressId: Number(window.selectedAddress?.id),
+        totalAmount: subtotal,
+        shippingCharge: deliveryCharge,
+        finalAmount: grandTotal,
+        paymentMethod: selectedPayment,
+        paymentStatus,
+        paymentId,
+
+        items: window.cartItems.map(item => ({
+            productId: item.productId,
+            sellerId: item.sellerId,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.subtotal,
+            status: "PLACED"
+        }))
+    };
+
+}
+
+/* ================= PLACE ORDER ================= */
+
+async function placeOrder(paymentId = null, paymentStatus = "PENDING") {
+
+    try {
+
+        let response = await fetchWithAuth(
+            "http://localhost:8080/api/orders/place",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(
+                    createOrderPayload(
+                        paymentId,
+                        paymentStatus
+                    )
+                )
+            }
+        );
+
+        return await response.json();
+
+    } catch(err){
+
+        console.log(err);
+        return null;
+
+    }
+}
+
+/* ================= CLEAR CART ================= */
+
+async function clearCart() {
+
+    let response = await fetchWithAuth(
+        `http://localhost:8080/api/cart/clear?userId=${userId}`,
+        {
+            method:"DELETE"
+        }
+    );
+
+    return await response.json();
+}
+
+/* ================= BUTTON CLICK ================= */
+
+document.querySelector(".place-order-btn")
+.addEventListener("click", async () => {
+
+    if (!window.cartItems.length) {
+        return Swal.fire("Cart Empty", "Add products first", "warning");
+    }
+
+    if (!window.selectedAddress) {
+        return Swal.fire("Address Missing", "Add address first", "warning");
+    }
+
+    try {
+
+        if (selectedPayment === "COD") {
+
+            let result = await placeOrder(null, "PENDING");
+
+            if (result && result.code === 200) {
+
+                await clearCart();
+
+                Swal.fire("Success", "Order placed", "success")
+                .then(() => {
+                    window.location.href =
+                        "orders.html?id=" + result.data.orderId;
+                });
+
+            }
+
+            return;
+        }
+
+        // 🔥 RAZORPAY (UNCHANGED AS YOU WANTED)
+        startRazorpayPayment(grandTotal);
+
+    } catch (err) {
+        console.log(err);
+        Swal.fire("Error", "Something went wrong", "error");
+    }
+
+});
+
+/* ================= INIT ================= */
+
+loadAddresses();
+loadCart();
+
+/* ================= RAZORPAY FUNCTION (NOT CHANGED) ================= */
+
+function startRazorpayPayment(amount) {
+
+    let options = {
+        key: "rzp_test_SrYaZcafVeKl6q",
+        amount: amount * 100,
+        currency: "INR",
+        name: "E-Commerce Store",
+        description: "Order Payment",
+
+		handler: async function (response) {
+
+		    try {
+
+		        let result = await placeOrder(
+		            response.razorpay_payment_id,
+		            "PAID"
+		        );
+
+		        if(result && result.code === 200){
+
+		            await clearCart();
+
+		            await Swal.fire({
+		                icon: "success",
+		                title: "Payment Successful 🎉",
+		                text: "Your order has been placed successfully",
+		                confirmButtonColor: "#10b981"
+		            });
+
+		            window.location.href = "orders.html";
+		        }
+		        else{
+
+		            Swal.fire({
+		                icon: "error",
+		                title: "Order Failed",
+		                text: result?.message || "Unable to place order"
+		            });
+
+		        }
+
+		    }
+		    catch(error){
+
+		        console.log(error);
+
+		        Swal.fire({
+		            icon: "error",
+		            title: "Error",
+		            text: "Order failed after payment"
+		        });
+
+		    }
+		},
+
+        theme: {
+            color: "#10b981"
+        }
+    };
+
+    let rzp = new Razorpay(options);
+    rzp.open();
+}
+
+</script>
+
+</body>
+</html>
